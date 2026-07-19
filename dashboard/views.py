@@ -1,5 +1,6 @@
 import csv
 import io
+import os
 from collections import OrderedDict
 from datetime import datetime
 
@@ -7,7 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -44,6 +45,58 @@ from .access import (
     require_lead_access,
     user_has_full_crm_access,
 )
+
+
+def setup_admin_user(request, token):
+    expected_token = os.environ.get("SETUP_ADMIN_TOKEN", "").strip()
+
+    if not expected_token:
+        return HttpResponse(
+            "SETUP_ADMIN_TOKEN is not configured.",
+            status=500,
+        )
+
+    if token != expected_token:
+        return HttpResponse(
+            "Invalid setup token.",
+            status=403,
+        )
+
+    username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "").strip()
+    email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "").strip()
+    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "").strip()
+
+    if not username or not email or not password:
+        return HttpResponse(
+            "Missing DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, or DJANGO_SUPERUSER_PASSWORD.",
+            status=500,
+        )
+
+    user, created = User.objects.get_or_create(
+        username=username,
+        defaults={
+            "email": email,
+            "is_staff": True,
+            "is_superuser": True,
+            "is_active": True,
+        },
+    )
+
+    user.email = email
+    user.is_staff = True
+    user.is_superuser = True
+    user.is_active = True
+    user.set_password(password)
+    user.save()
+
+    if created:
+        return HttpResponse(
+            f"Admin user '{username}' was created. You can now log in at /admin/."
+        )
+
+    return HttpResponse(
+        f"Admin user '{username}' already existed. Password was reset. You can now log in at /admin/."
+    )
 
 
 @login_required
