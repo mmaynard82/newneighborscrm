@@ -1,0 +1,722 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ person }} | New Neighbors CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-dark: #172554;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #d97706;
+            --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primary-dark);
+            color: white;
+            padding: 24px 18px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 34px;
+        }
+
+        .sidebar-brand img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .sidebar-brand-text h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .sidebar-brand-text p {
+            font-size: 12px;
+            margin: 4px 0 0 0;
+            color: #cbd5e1;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #93c5fd;
+            letter-spacing: .08em;
+            margin: 22px 0 8px 8px;
+        }
+
+        .nav-link {
+            display: block;
+            color: #e5efff;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .nav-link.active {
+            background: var(--primary-light);
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout-form {
+            margin: 0;
+        }
+
+        .logout-button {
+            width: 100%;
+            display: block;
+            color: #e5efff;
+            background: transparent;
+            border: none;
+            text-align: left;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        .logout-button:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            padding: 24px;
+        }
+
+        .topbar {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 26px;
+        }
+
+        .topbar p {
+            margin: 4px 0 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            text-decoration: none;
+            padding: 11px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-block;
+            font-family: Arial, sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--accent);
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-small {
+            padding: 7px 10px;
+            font-size: 12px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .section h3 {
+            margin: 0 0 14px 0;
+            color: var(--primary);
+            font-size: 21px;
+        }
+
+        .section-note {
+            margin: -4px 0 16px 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .info-box {
+            background: #f8fbff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            color: var(--text);
+            font-weight: bold;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .notes-box {
+            background: #f8fbff;
+            border-left: 5px solid var(--primary-light);
+            padding: 14px;
+            border-radius: 10px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        form.inline-form {
+            display: inline;
+        }
+
+        select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: white;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--accent);
+            color: var(--primary);
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8fbff;
+        }
+
+        .empty {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .small-link {
+            color: var(--primary);
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .small-link:hover {
+            text-decoration: underline;
+        }
+
+        .status-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .do-not-contact {
+            background: #fee2e2;
+            border-left: 5px solid var(--danger);
+            color: #991b1b;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1000px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+            <div class="sidebar-brand-text">
+                <h1>New Neighbors</h1>
+                <p>CRM Platform</p>
+            </div>
+        </div>
+
+        <div class="nav-section-title">Main</div>
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link" href="/pipeline/">Pipeline</a>
+        <a class="nav-link" href="/search/">Search</a>
+        <a class="nav-link" href="/campaigns/">Campaigns</a>
+        <a class="nav-link" href="/admin/people/person/">People</a>
+        <a class="nav-link" href="/admin/properties/property/">Properties</a>
+        <a class="nav-link active" href="/admin/leads/lead/">Leads</a>
+        <a class="nav-link" href="/admin/tasks/task/">Tasks</a>
+
+        <div class="nav-section-title">Operations</div>
+        <a class="nav-link" href="/admin/services/service/">Services</a>
+        <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+        <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+        <a class="nav-link" href="/admin/documents/document/">Documents</a>
+        <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+        <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+
+        <div class="nav-section-title">Quick Add</div>
+        <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+        <a class="nav-link" href="/import-leads/">+ Import Leads</a>
+        <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
+        <a class="nav-link" href="/admin/people/person/add/">+ Add Person</a>
+        <a class="nav-link" href="/admin/properties/property/add/">+ Add Property</a>
+        <a class="nav-link" href="/admin/tasks/task/add/">+ Add Task</a>
+
+        <div class="nav-section-title">System</div>
+        <a class="nav-link" href="/users/">User Access</a>
+        <a class="nav-link" href="/admin/">Admin Panel</a>
+
+        <form method="post" action="/accounts/logout/" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+            <div>
+                <h2>{{ person }}</h2>
+                <p>{{ lead.get_lead_type_display }} lead · {{ lead.get_status_display }}</p>
+            </div>
+
+            <div class="top-actions">
+                <a class="btn btn-secondary" href="/pipeline/">Back to Pipeline</a>
+                <a class="btn btn-secondary" href="/lead/{{ lead.id }}/edit/">Edit Lead</a>
+                <a class="btn btn-primary" href="/lead/{{ lead.id }}/log-communication/">Log Communication</a>
+                <a class="btn btn-secondary" href="/lead/{{ lead.id }}/add-task/">Add Task</a>
+            </div>
+        </div>
+
+        {% if person.do_not_contact %}
+            <div class="do-not-contact">
+                Do Not Contact is enabled for this person.
+            </div>
+        {% endif %}
+
+        <div class="grid">
+
+            <div class="section">
+                <h3>Contact Information</h3>
+
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="info-label">Name</div>
+                        <div class="info-value">{{ person }}</div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-label">Person Type</div>
+                        <div class="info-value">{{ person.get_person_type_display }}</div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-label">Email</div>
+                        <div class="info-value">{{ person.email|default:"Not listed" }}</div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value">{{ person.phone|default:"Not listed" }}</div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-label">Preferred Contact</div>
+                        <div class="info-value">{{ person.get_preferred_contact_method_display|default:"Not listed" }}</div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-label">Created</div>
+                        <div class="info-value">{{ person.created_at|date:"M d, Y" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Communication Preferences</h3>
+
+                <div>
+                    {% if person.email_opt_in %}
+                        <span class="badge badge-success">Email Opt-In</span>
+                    {% else %}
+                        <span class="badge badge-warning">Email Not Opted In</span>
+                    {% endif %}
+
+                    {% if person.sms_opt_in %}
+                        <span class="badge badge-success">SMS Opt-In</span>
+                    {% else %}
+                        <span class="badge badge-warning">SMS Not Opted In</span>
+                    {% endif %}
+
+                    {% if person.do_not_contact %}
+                        <span class="badge badge-danger">Do Not Contact</span>
+                    {% endif %}
+                </div>
+
+                <h3 style="margin-top: 24px;">Tags</h3>
+
+                <div>
+                    {% for person_tag in person_tags %}
+                        <span class="badge">{{ person_tag.tag.name }}</span>
+                    {% empty %}
+                        <p class="empty">No tags assigned.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h3>Lead Details</h3>
+
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-label">Lead Type</div>
+                    <div class="info-value">{{ lead.get_lead_type_display }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-label">Status</div>
+                    <div class="info-value">{{ lead.get_status_display }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-label">Source</div>
+                    <div class="info-value">{{ lead.source|default:"Not listed" }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-label">Referred By</div>
+                    <div class="info-value">{{ lead.referred_by|default:"Not listed" }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-label">Related Property</div>
+                    <div class="info-value">{{ lead.related_property|default:"Not linked" }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-label">Created</div>
+                    <div class="info-value">{{ lead.created_at|date:"M d, Y" }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-label">Last Contact</div>
+                    <div class="info-value">{{ lead.last_contact_date|default:"Not listed" }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-label">Next Follow-Up</div>
+                    <div class="info-value">{{ lead.next_follow_up_date|default:"Not scheduled" }}</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 18px;">
+                <h3>Update Status</h3>
+
+                <form method="post" action="/lead/{{ lead.id }}/update-status/" class="inline-form">
+                    {% csrf_token %}
+
+                    <select name="status">
+                        {% for status_key, status_label in lead_status_choices %}
+                            <option value="{{ status_key }}" {% if lead.status == status_key %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <button class="btn btn-primary btn-small" type="submit">Save Status</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Next Step</h3>
+
+            {% if lead.next_step %}
+                <div class="notes-box">{{ lead.next_step }}</div>
+            {% else %}
+                <p class="empty">No next step listed.</p>
+            {% endif %}
+        </div>
+
+        <div class="grid">
+
+            <div class="section">
+                <h3>Person Notes</h3>
+
+                {% if person.notes %}
+                    <div class="notes-box">{{ person.notes }}</div>
+                {% else %}
+                    <p class="empty">No person notes.</p>
+                {% endif %}
+            </div>
+
+            <div class="section">
+                <h3>Lead Notes</h3>
+
+                {% if lead.notes %}
+                    <div class="notes-box">{{ lead.notes }}</div>
+                {% else %}
+                    <p class="empty">No lead notes.</p>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <div class="section">
+            <h3>Related Tasks</h3>
+            <p class="section-note">Open, in-progress, and completed tasks tied to this person.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Due Date</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Complete</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for task in related_tasks %}
+                    <tr>
+                        <td>{{ task.title }}</td>
+                        <td>{{ task.due_date|default:"Not scheduled" }}</td>
+                        <td>{{ task.get_priority_display }}</td>
+                        <td>{{ task.get_status_display }}</td>
+                        <td>
+                            {% if task.status != "completed" %}
+                                <form method="post" action="/lead/{{ lead.id }}/task/{{ task.id }}/complete/" class="inline-form">
+                                    {% csrf_token %}
+                                    <button class="btn btn-secondary btn-small" type="submit">Mark Complete</button>
+                                </form>
+                            {% else %}
+                                <span class="badge badge-success">Completed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty">No related tasks yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>Communication History</h3>
+            <p class="section-note">Calls, emails, texts, meetings, notes, and follow-up history.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Subject</th>
+                        <th>Outcome</th>
+                        <th>Next Step</th>
+                        <th>Follow-Up</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for communication in communications %}
+                    <tr>
+                        <td>{{ communication.communication_date }}</td>
+                        <td>{{ communication.get_communication_type_display }}</td>
+                        <td>
+                            <strong>{{ communication.subject|default:"No subject" }}</strong>
+                            <br>
+                            {{ communication.summary }}
+                        </td>
+                        <td>{{ communication.get_outcome_display|default:"Not listed" }}</td>
+                        <td>{{ communication.next_step|default:"Not listed" }}</td>
+                        <td>{{ communication.next_follow_up_date|default:"Not scheduled" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty">No communication history yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,586 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search | New Neighbors CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-dark: #172554;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --table-row: #f8fbff;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --success: #16a34a;
+            --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primary-dark);
+            color: white;
+            padding: 24px 18px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 34px;
+        }
+
+        .sidebar-brand img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .sidebar-brand-text h1 {
+            font-size: 18px;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .sidebar-brand-text p {
+            font-size: 12px;
+            margin: 4px 0 0 0;
+            color: #cbd5e1;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #93c5fd;
+            letter-spacing: .08em;
+            margin: 22px 0 8px 8px;
+        }
+
+        .nav-link {
+            display: block;
+            color: #e5efff;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .nav-link.active {
+            background: var(--primary-light);
+            color: white;
+            font-weight: bold;
+        }
+
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            padding: 24px;
+        }
+
+        .topbar {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 22px;
+            margin-bottom: 24px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 26px;
+        }
+
+        .topbar p {
+            margin: 4px 0 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .search-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 260px;
+            padding: 13px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+        }
+
+        .btn {
+            border: none;
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #16306d;
+        }
+
+        .btn-secondary {
+            background: var(--accent);
+            color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: #c6ddfb;
+        }
+
+        .results-summary {
+            margin-top: 14px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .section h3 {
+            margin: 0 0 6px 0;
+            color: var(--primary);
+            font-size: 22px;
+        }
+
+        .section-note {
+            margin: 0 0 16px 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--accent);
+            color: var(--primary);
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background: var(--table-row);
+        }
+
+        tbody tr:hover {
+            background: #eef5ff;
+        }
+
+        .empty {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .small-link {
+            color: var(--primary);
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .small-link:hover {
+            text-decoration: underline;
+        }
+
+        .status-pill {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--primary);
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .priority-urgent,
+        .priority-high {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .priority-normal {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .priority-low {
+            color: var(--muted);
+            font-weight: bold;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+        }
+        .logout-form {
+        margin: 0;
+        }
+
+        .logout-button {
+        width: 100%;
+        display: block;
+        color: #e5efff;
+        background: transparent;
+        border: none;
+        text-align: left;
+        text-decoration: none;
+        padding: 11px 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        }
+
+        .logout-button:hover {
+        background: rgba(255,255,255,.12);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+            <div class="sidebar-brand-text">
+                <h1>New Neighbors</h1>
+                <p>CRM Platform</p>
+            </div>
+        </div>
+
+        <div class="nav-section-title">Main</div>
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link" href="/pipeline/">Pipeline</a>
+        <a class="nav-link active" href="/search/">Search</a>
+        <a class="nav-link" href="/admin/people/person/">People</a>
+        <a class="nav-link" href="/admin/properties/property/">Properties</a>
+        <a class="nav-link" href="/admin/leads/lead/">Leads</a>
+        <a class="nav-link" href="/admin/tasks/task/">Tasks</a>
+
+        <div class="nav-section-title">Operations</div>
+        <a class="nav-link" href="/admin/services/service/">Services</a>
+        <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+        <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+        <a class="nav-link" href="/admin/documents/document/">Documents</a>
+        <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+        <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+
+        <div class="nav-section-title">Quick Add</div>
+        <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+        <a class="nav-link" href="/admin/people/person/add/">+ Add Person</a>
+        <a class="nav-link" href="/admin/properties/property/add/">+ Add Property</a>
+        <a class="nav-link" href="/admin/tasks/task/add/">+ Add Task</a>
+        <a class="nav-link" href="/admin/maintenance/maintenancerequest/add/">+ Add Maintenance</a>
+        <a class="nav-link" href="/admin/inspections/homeinspection/add/">+ Add Inspection</a>
+        <a class="nav-link" href="/admin/documents/document/add/">+ Add Document</a>
+        <a class="nav-link" href="/admin/communications/communicationlog/add/">+ Add Communication</a>
+
+        <div class="nav-section-title">System</div>
+        <a class="nav-link" href="/admin/">Admin Panel</a>
+        <form method="post" action="/accounts/logout/" class="logout-form">
+    {% csrf_token %}
+    <button type="submit" class="logout-button">Logout</button>
+</form>
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+            <h2>Global Search</h2>
+            <p>Search people, leads, properties, and tasks from one place.</p>
+        </div>
+
+        <div class="search-card">
+            <form class="search-form" method="get" action="/search/">
+                <input
+                    class="search-input"
+                    type="text"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="Search by name, phone, email, address, lead source, notes, or task..."
+                    autofocus
+                >
+
+                <button class="btn btn-primary" type="submit">Search</button>
+                <a class="btn btn-secondary" href="/search/">Clear</a>
+            </form>
+
+            {% if query %}
+                <div class="results-summary">
+                    Found {{ total_results }} result(s) for: <strong>{{ query }}</strong>
+                </div>
+            {% else %}
+                <div class="results-summary">
+                    Enter a name, email, phone number, address, lead source, task, or keyword.
+                </div>
+            {% endif %}
+        </div>
+
+        {% if query %}
+
+            <div class="section">
+                <h3>People</h3>
+                <p class="section-note">Matches from names, email, phone, and notes.</p>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Open</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for person in people_results %}
+                            <tr>
+                                <td>{{ person }}</td>
+                                <td>{{ person.get_person_type_display }}</td>
+                                <td>{{ person.email|default:"Not listed" }}</td>
+                                <td>{{ person.phone|default:"Not listed" }}</td>
+                                <td>
+                                    <a class="small-link" href="/admin/people/person/{{ person.id }}/change/">Open Person</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="empty">No matching people.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Leads</h3>
+                <p class="section-note">Matches from lead contact, source, notes, next step, and property.</p>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Person</th>
+                                <th>Lead Type</th>
+                                <th>Status</th>
+                                <th>Source</th>
+                                <th>Next Step</th>
+                                <th>Open</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lead in lead_results %}
+                            <tr>
+                                <td>{{ lead.person }}</td>
+                                <td>{{ lead.get_lead_type_display }}</td>
+                                <td><span class="status-pill">{{ lead.get_status_display }}</span></td>
+                                <td>{{ lead.source|default:"Not listed" }}</td>
+                                <td>{{ lead.next_step|default:"Not listed" }}</td>
+                                <td>
+                                    <a class="small-link" href="/lead/{{ lead.id }}/">View Lead</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="empty">No matching leads.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Properties</h3>
+                <p class="section-note">Matches from address, city, zip, owner, and notes.</p>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>City</th>
+                                <th>State</th>
+                                <th>Owner</th>
+                                <th>Open</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for property in property_results %}
+                            <tr>
+                                <td>{{ property.address }}</td>
+                                <td>{{ property.city }}</td>
+                                <td>{{ property.state }}</td>
+                                <td>{{ property.owner|default:"Not listed" }}</td>
+                                <td>
+                                    <a class="small-link" href="/admin/properties/property/{{ property.id }}/change/">Open Property</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="empty">No matching properties.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Tasks</h3>
+                <p class="section-note">Matches from task title, description, person, or property.</p>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Person</th>
+                                <th>Property</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Due Date</th>
+                                <th>Open</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in task_results %}
+                            <tr>
+                                <td>{{ task.title }}</td>
+                                <td>{{ task.related_person|default:"Not linked" }}</td>
+                                <td>{{ task.related_property|default:"Not linked" }}</td>
+                                <td>{{ task.get_status_display }}</td>
+                                <td class="priority-{{ task.priority }}">{{ task.get_priority_display }}</td>
+                                <td>{{ task.due_date|default:"Not scheduled" }}</td>
+                                <td>
+                                    <a class="small-link" href="/admin/tasks/task/{{ task.id }}/change/">Open Task</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="empty">No matching tasks.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% endif %}
+
+    </main>
+
+</div>
+
+</body>
+</html>

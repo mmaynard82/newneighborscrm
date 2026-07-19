@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | New Neighbors CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-dark: #172554;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --danger: #dc2626;
+            --shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+            --radius: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background:
+                linear-gradient(135deg, rgba(30,58,138,.94), rgba(59,130,246,.82)),
+                var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            padding: 24px;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 980px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+        }
+
+        .login-brand {
+            background: linear-gradient(160deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 46px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand-top {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-top img {
+            width: 78px;
+            height: 78px;
+            object-fit: contain;
+            background: white;
+            border-radius: 16px;
+            padding: 4px;
+        }
+
+        .brand-top h1 {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        .brand-top p {
+            margin: 6px 0 0 0;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        .brand-message {
+            margin-top: 60px;
+        }
+
+        .brand-message h2 {
+            font-size: 30px;
+            margin: 0 0 14px 0;
+        }
+
+        .brand-message p {
+            color: #dbeafe;
+            line-height: 1.6;
+            margin: 0;
+            max-width: 420px;
+        }
+
+        .brand-points {
+            margin-top: 32px;
+            color: #e5efff;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .login-form-area {
+            padding: 46px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-form-area h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 28px;
+        }
+
+        .login-form-area .subtext {
+            margin: 8px 0 28px 0;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .error-box {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 18px;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+        }
+
+        .login-button {
+            width: 100%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .login-button:hover {
+            background: #16306d;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 800px) {
+            .login-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            .login-brand {
+                padding: 30px;
+            }
+
+            .brand-message {
+                margin-top: 30px;
+            }
+
+            .login-form-area {
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-wrapper">
+
+    <div class="login-brand">
+        <div>
+            <div class="brand-top">
+                <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+                <div>
+                    <h1>New Neighbors</h1>
+                    <p>Real Estate CRM Platform</p>
+                </div>
+            </div>
+
+            <div class="brand-message">
+                <h2>Welcome back.</h2>
+                <p>
+                    Access your command center for leads, properties, services,
+                    maintenance, inspections, and documents.
+                </p>
+            </div>
+
+            <div class="brand-points">
+                <div>• Property management tracking</div>
+                <div>• Home management workflows</div>
+                <div>• Buyer and seller lead organization</div>
+                <div>• Documents, inspections, and tasks</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-form-area">
+        <h2>Sign in</h2>
+        <p class="subtext">Enter your CRM username and password to continue.</p>
+
+        {% if form.errors %}
+            <div class="error-box">
+                Your username or password was incorrect. Please try again.
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <label for="id_username">Username</label>
+            {{ form.username }}
+
+            <label for="id_password">Password</label>
+            {{ form.password }}
+
+            <button class="login-button" type="submit">Log In</button>
+        </form>
+
+        <div class="footer-note">
+            New Neighbors CRM · Internal Use
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

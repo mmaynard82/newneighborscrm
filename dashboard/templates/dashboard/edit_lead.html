@@ -1,0 +1,466 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Lead | New Neighbors CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-dark: #172554;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --danger: #dc2626;
+            --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primary-dark);
+            color: white;
+            padding: 24px 18px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 34px;
+        }
+
+        .sidebar-brand img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .sidebar-brand-text h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .sidebar-brand-text p {
+            font-size: 12px;
+            margin: 4px 0 0 0;
+            color: #cbd5e1;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #93c5fd;
+            letter-spacing: .08em;
+            margin: 22px 0 8px 8px;
+        }
+
+        .nav-link {
+            display: block;
+            color: #e5efff;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .nav-link.active {
+            background: var(--primary-light);
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout-form {
+            margin: 0;
+        }
+
+        .logout-button {
+            width: 100%;
+            display: block;
+            color: #e5efff;
+            background: transparent;
+            border: none;
+            text-align: left;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        .logout-button:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            padding: 24px;
+        }
+
+        .topbar {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 26px;
+        }
+
+        .topbar p {
+            margin: 4px 0 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            margin-bottom: 24px;
+            max-width: 1000px;
+        }
+
+        .section h3 {
+            margin: 0 0 16px 0;
+            color: var(--primary);
+            font-size: 21px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .form-full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 7px;
+            font-size: 14px;
+            display: block;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            background: white;
+            margin-bottom: 4px;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        ul.errorlist {
+            color: var(--danger);
+            margin: 4px 0 10px 0;
+            padding-left: 20px;
+        }
+
+        .btn {
+            border: none;
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--accent);
+            color: var(--primary);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+            <div class="sidebar-brand-text">
+                <h1>New Neighbors</h1>
+                <p>CRM Platform</p>
+            </div>
+        </div>
+
+        <div class="nav-section-title">Main</div>
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link" href="/pipeline/">Pipeline</a>
+        <a class="nav-link" href="/search/">Search</a>
+        <a class="nav-link" href="/campaigns/">Campaigns</a>
+        <a class="nav-link" href="/admin/people/person/">People</a>
+        <a class="nav-link" href="/admin/properties/property/">Properties</a>
+        <a class="nav-link" href="/admin/leads/lead/">Leads</a>
+        <a class="nav-link" href="/admin/tasks/task/">Tasks</a>
+
+        <div class="nav-section-title">Quick Add</div>
+        <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+        <a class="nav-link" href="/import-leads/">+ Import Leads</a>
+        <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
+
+        <div class="nav-section-title">System</div>
+        <a class="nav-link" href="/users/">User Access</a>
+        <a class="nav-link" href="/admin/">Admin Panel</a>
+
+        <form method="post" action="/accounts/logout/" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+            <div>
+                <h2>Edit Lead</h2>
+                <p>Update contact, lead, follow-up, and communication preferences.</p>
+            </div>
+
+            <div>
+                <a class="btn btn-secondary" href="/lead/{{ lead.id }}/">Back to Lead</a>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {{ form.non_field_errors }}
+
+            <div class="section">
+                <h3>Contact Information</h3>
+
+                <div class="form-grid">
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                        {{ form.first_name }}
+                        {{ form.first_name.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                        {{ form.last_name }}
+                        {{ form.last_name.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.email.id_for_label }}">Email</label>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.phone.id_for_label }}">Phone</label>
+                        {{ form.phone }}
+                        {{ form.phone.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.preferred_contact_method.id_for_label }}">Preferred Contact Method</label>
+                        {{ form.preferred_contact_method }}
+                        {{ form.preferred_contact_method.errors }}
+                    </div>
+
+                    <div class="check-row">
+                        {{ form.email_opt_in }}
+                        <label for="{{ form.email_opt_in.id_for_label }}">Email Opt-In</label>
+                        {{ form.email_opt_in.errors }}
+                    </div>
+
+                    <div class="check-row">
+                        {{ form.sms_opt_in }}
+                        <label for="{{ form.sms_opt_in.id_for_label }}">SMS Opt-In</label>
+                        {{ form.sms_opt_in.errors }}
+                    </div>
+
+                    <div class="check-row">
+                        {{ form.do_not_contact }}
+                        <label for="{{ form.do_not_contact.id_for_label }}">Do Not Contact</label>
+                        {{ form.do_not_contact.errors }}
+                    </div>
+
+                    <div class="form-full">
+                        <label for="{{ form.person_notes.id_for_label }}">Person Notes</label>
+                        {{ form.person_notes }}
+                        {{ form.person_notes.errors }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Lead Information</h3>
+
+                <div class="form-grid">
+                    <div>
+                        <label for="{{ form.lead_type.id_for_label }}">Lead Type</label>
+                        {{ form.lead_type }}
+                        {{ form.lead_type.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.status.id_for_label }}">Status</label>
+                        {{ form.status }}
+                        {{ form.status.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.source.id_for_label }}">Lead Source</label>
+                        {{ form.source }}
+                        {{ form.source.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.related_property.id_for_label }}">Related Property</label>
+                        {{ form.related_property }}
+                        {{ form.related_property.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.last_contact_date.id_for_label }}">Last Contact Date</label>
+                        {{ form.last_contact_date }}
+                        {{ form.last_contact_date.errors }}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.next_follow_up_date.id_for_label }}">Next Follow-Up Date</label>
+                        {{ form.next_follow_up_date }}
+                        {{ form.next_follow_up_date.errors }}
+                    </div>
+
+                    <div class="form-full">
+                        <label for="{{ form.next_step.id_for_label }}">Next Step</label>
+                        {{ form.next_step }}
+                        {{ form.next_step.errors }}
+                    </div>
+
+                    <div class="form-full">
+                        <label for="{{ form.lead_notes.id_for_label }}">Lead Notes</label>
+                        {{ form.lead_notes }}
+                        {{ form.lead_notes.errors }}
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit">Save Lead</button>
+                    <a class="btn btn-secondary" href="/lead/{{ lead.id }}/">Cancel</a>
+                </div>
+            </div>
+
+        </form>
+
+    </main>
+
+</div>
+
+</body>
+</html>

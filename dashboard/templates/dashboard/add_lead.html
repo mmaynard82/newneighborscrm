@@ -1,0 +1,493 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Lead | New Neighbors CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-dark: #172554;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --danger: #dc2626;
+            --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            --radius: 14px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primary-dark);
+            color: white;
+            padding: 24px 18px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 34px;
+        }
+
+        .sidebar-brand img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .sidebar-brand-text h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .sidebar-brand-text p {
+            font-size: 12px;
+            margin: 4px 0 0 0;
+            color: #cbd5e1;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #93c5fd;
+            letter-spacing: .08em;
+            margin: 22px 0 8px 8px;
+        }
+
+        .nav-link {
+            display: block;
+            color: #e5efff;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .nav-link:hover { background: rgba(255,255,255,.12); }
+
+        .nav-link.active {
+            background: var(--primary-light);
+            color: white;
+            font-weight: bold;
+        }
+
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            padding: 24px;
+        }
+
+        .topbar {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 22px;
+            margin-bottom: 24px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 26px;
+        }
+
+        .topbar p {
+            margin: 4px 0 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .form-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 26px;
+            max-width: 1000px;
+        }
+
+        .form-section-title {
+            color: var(--primary);
+            font-size: 18px;
+            margin: 8px 0 16px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(240px, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 7px;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+            background: white;
+        }
+
+        textarea { resize: vertical; }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .checkbox-row input {
+            width: auto;
+        }
+
+        .checkbox-row label {
+            margin-bottom: 0;
+            font-weight: normal;
+            color: var(--text);
+        }
+
+        .tag-box {
+            background: #f8fbff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .tag-box ul {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+            columns: 2;
+        }
+
+        .tag-box li {
+            margin-bottom: 8px;
+        }
+
+        .tag-box label {
+            font-weight: normal;
+            color: var(--text);
+        }
+
+        .tag-box input {
+            width: auto;
+            margin-right: 6px;
+        }
+
+        .errorlist {
+            color: var(--danger);
+            margin: 6px 0 0 0;
+            padding-left: 18px;
+            font-size: 13px;
+        }
+
+        .help-text {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .actions {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--accent); color: var(--primary); }
+
+        @media (max-width: 900px) {
+            .layout { display: block; }
+            .sidebar { position: relative; width: 100%; }
+            .main { margin-left: 0; width: 100%; }
+            .form-grid { grid-template-columns: 1fr; }
+            .tag-box ul { columns: 1; }
+        }
+        .logout-form {
+        margin: 0;
+        }
+
+        .logout-button {
+        width: 100%;
+        display: block;
+        color: #e5efff;
+        background: transparent;
+        border: none;
+        text-align: left;
+        text-decoration: none;
+        padding: 11px 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        margin-bottom: 4px;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        }
+
+        .logout-button:hover {
+        background: rgba(255,255,255,.12);
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+            <div class="sidebar-brand-text">
+                <h1>New Neighbors</h1>
+                <p>CRM Platform</p>
+            </div>
+        </div>
+
+        <div class="nav-section-title">Main</div>
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link" href="/pipeline/">Pipeline</a>
+        <a class="nav-link" href="/search/">Search</a>
+        <a class="nav-link" href="/admin/people/person/">People</a>
+        <a class="nav-link" href="/admin/properties/property/">Properties</a>
+        <a class="nav-link" href="/admin/leads/lead/">Leads</a>
+        <a class="nav-link" href="/admin/tasks/task/">Tasks</a>
+
+        <div class="nav-section-title">Operations</div>
+        <a class="nav-link" href="/admin/services/service/">Services</a>
+        <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+        <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+        <a class="nav-link" href="/admin/documents/document/">Documents</a>
+        <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+        <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+
+        <div class="nav-section-title">Quick Add</div>
+        <a class="nav-link active" href="/add-lead/">+ Add Lead</a>
+        <a class="nav-link" href="/admin/people/person/add/">+ Add Person</a>
+        <a class="nav-link" href="/admin/properties/property/add/">+ Add Property</a>
+        <a class="nav-link" href="/admin/tasks/task/add/">+ Add Task</a>
+        <a class="nav-link" href="/admin/maintenance/maintenancerequest/add/">+ Add Maintenance</a>
+        <a class="nav-link" href="/admin/inspections/homeinspection/add/">+ Add Inspection</a>
+        <a class="nav-link" href="/admin/documents/document/add/">+ Add Document</a>
+        <a class="nav-link" href="/admin/communications/communicationlog/add/">+ Add Communication</a>
+
+        <div class="nav-section-title">System</div>
+        <a class="nav-link" href="/admin/">Admin Panel</a>
+        <form method="post" action="/accounts/logout/" class="logout-form">
+    {% csrf_token %}
+    <button type="submit" class="logout-button">Logout</button>
+</form>
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+            <h2>Add New Lead</h2>
+            <p>Create a person, lead record, tags, permissions, referral details, and optional follow-up task.</p>
+        </div>
+
+        <div class="form-card">
+
+            <form method="post">
+                {% csrf_token %}
+
+                <h3 class="form-section-title">Contact Information</h3>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.first_name.id_for_label }}">First Name</label>
+                        {{ form.first_name }}
+                        {{ form.first_name.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+                        {{ form.last_name }}
+                        {{ form.last_name.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">Email</label>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.phone.id_for_label }}">Phone</label>
+                        {{ form.phone }}
+                        {{ form.phone.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.preferred_contact_method.id_for_label }}">Preferred Contact Method</label>
+                        {{ form.preferred_contact_method }}
+                        {{ form.preferred_contact_method.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.referred_by.id_for_label }}">Referred By</label>
+                        {{ form.referred_by }}
+                        {{ form.referred_by.errors }}
+                    </div>
+
+                    <div class="form-group full">
+                        <div class="checkbox-row">
+                            {{ form.email_opt_in }}
+                            <label for="{{ form.email_opt_in.id_for_label }}">Email Opt-In</label>
+                        </div>
+
+                        <div class="checkbox-row">
+                            {{ form.sms_opt_in }}
+                            <label for="{{ form.sms_opt_in.id_for_label }}">SMS Opt-In</label>
+                        </div>
+
+                        <div class="checkbox-row">
+                            {{ form.do_not_contact }}
+                            <label for="{{ form.do_not_contact.id_for_label }}">Do Not Contact</label>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="form-section-title">Lead Details</h3>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.lead_type.id_for_label }}">Lead Type</label>
+                        {{ form.lead_type }}
+                        {{ form.lead_type.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.source.id_for_label }}">Lead Source</label>
+                        {{ form.source }}
+                        {{ form.source.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.status.id_for_label }}">Status</label>
+                        {{ form.status }}
+                        {{ form.status.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.related_property.id_for_label }}">Related Property</label>
+                        {{ form.related_property }}
+                        {{ form.related_property.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.last_contact_date.id_for_label }}">Last Contact Date</label>
+                        {{ form.last_contact_date }}
+                        {{ form.last_contact_date.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.next_follow_up_date.id_for_label }}">Next Follow-Up Date</label>
+                        {{ form.next_follow_up_date }}
+                        {{ form.next_follow_up_date.errors }}
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="{{ form.next_step.id_for_label }}">Next Step</label>
+                        {{ form.next_step }}
+                        {{ form.next_step.errors }}
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Tags</label>
+                        <div class="tag-box">
+                            {{ form.tags }}
+                        </div>
+                        {{ form.tags.errors }}
+                        <p class="help-text">Tags help segment future campaigns, follow-ups, and reports.</p>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="{{ form.notes.id_for_label }}">Notes</label>
+                        {{ form.notes }}
+                        {{ form.notes.errors }}
+                    </div>
+
+                    <div class="form-group full">
+                        <div class="checkbox-row">
+                            {{ form.create_follow_up_task }}
+                            <label for="{{ form.create_follow_up_task.id_for_label }}">
+                                Create follow-up task if follow-up date is entered
+                            </label>
+                        </div>
+                        {{ form.create_follow_up_task.errors }}
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit">Save Lead</button>
+                    <a class="btn btn-secondary" href="/pipeline/">Cancel</a>
+                    <a class="btn btn-secondary" href="/">Back to Dashboard</a>
+                </div>
+            </form>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

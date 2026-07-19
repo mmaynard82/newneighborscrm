@@ -1,0 +1,445 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contacts | New Neighbors CRM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-dark: #172554;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --warning: #d97706;
+            --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            --radius: 14px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primary-dark);
+            color: white;
+            padding: 24px 18px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 34px;
+        }
+
+        .sidebar-brand img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+            background: white;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .sidebar-brand-text h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .sidebar-brand-text p {
+            font-size: 12px;
+            margin: 4px 0 0 0;
+            color: #cbd5e1;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #93c5fd;
+            letter-spacing: .08em;
+            margin: 22px 0 8px 8px;
+        }
+
+        .nav-link {
+            display: block;
+            color: #e5efff;
+            text-decoration: none;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .nav-link.active {
+            background: var(--primary-light);
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout-form {
+            margin: 0;
+        }
+
+        .logout-button {
+            width: 100%;
+            display: block;
+            color: #e5efff;
+            background: transparent;
+            border: none;
+            text-align: left;
+            padding: 11px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        .logout-button:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            padding: 24px;
+        }
+
+        .topbar {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .topbar h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 26px;
+        }
+
+        .topbar p {
+            margin: 4px 0 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            text-decoration: none;
+            padding: 11px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--accent);
+            color: var(--primary);
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 22px;
+            margin-bottom: 24px;
+        }
+
+        .section h3 {
+            margin: 0 0 14px 0;
+            color: var(--primary);
+            font-size: 21px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .search-form input {
+            flex: 1;
+            min-width: 260px;
+            padding: 12px 13px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--accent);
+            color: var(--primary);
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8fbff;
+        }
+
+        .small-link {
+            color: var(--primary);
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .small-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+            <div class="sidebar-brand-text">
+                <h1>New Neighbors</h1>
+                <p>CRM Platform</p>
+            </div>
+        </div>
+
+        <div class="nav-section-title">Main</div>
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link" href="/pipeline/">Pipeline</a>
+        <a class="nav-link" href="/search/">Search</a>
+        <a class="nav-link" href="/campaigns/">Campaigns</a>
+        <a class="nav-link active" href="/people/">Contacts</a>
+        <a class="nav-link" href="/properties/">Properties</a>
+        <a class="nav-link" href="/admin/leads/lead/">Leads</a>
+        <a class="nav-link" href="/admin/tasks/task/">Tasks</a>
+
+        <div class="nav-section-title">Operations</div>
+        <a class="nav-link" href="/admin/services/service/">Services</a>
+        <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+        <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+        <a class="nav-link" href="/admin/documents/document/">Documents</a>
+        <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+        <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+
+        <div class="nav-section-title">Quick Add</div>
+        <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+        <a class="nav-link" href="/import-leads/">+ Import Leads</a>
+        <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
+        <a class="nav-link" href="/people/add/">+ Add Contact</a>
+
+        <div class="nav-section-title">System</div>
+        <a class="nav-link" href="/users/">User Access</a>
+        <a class="nav-link" href="/admin/">Admin Panel</a>
+
+        <form method="post" action="/accounts/logout/" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+            <div>
+                <h2>Contacts</h2>
+                <p>{{ person_count }} visible contacts</p>
+            </div>
+
+            <div class="top-actions">
+                <a class="btn btn-secondary" href="/">Dashboard</a>
+                <a class="btn btn-primary" href="/people/add/">Add Contact</a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Search Contacts</h3>
+
+            <form method="get" class="search-form">
+                <input type="text" name="q" value="{{ query }}" placeholder="Search by name, email, phone, or notes">
+                <button class="btn btn-primary" type="submit">Search</button>
+                <a class="btn btn-secondary" href="/people/">Clear</a>
+            </form>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Contact</th>
+                        <th>Type</th>
+                        <th>Contact Info</th>
+                        <th>Preferences</th>
+                        <th>Open</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for person in people %}
+                    <tr>
+                        <td>
+                            <strong>{{ person }}</strong>
+                            <br>
+                            Created {{ person.created_at|date:"M d, Y" }}
+                        </td>
+
+                        <td>{{ person.get_person_type_display }}</td>
+
+                        <td>
+                            {{ person.email|default:"No email" }}
+                            <br>
+                            {{ person.phone|default:"No phone" }}
+                        </td>
+
+                        <td>
+                            {% if person.email_opt_in %}
+                                <span class="badge badge-success">Email Opt-In</span>
+                            {% else %}
+                                <span class="badge badge-warning">No Email Opt-In</span>
+                            {% endif %}
+
+                            {% if person.sms_opt_in %}
+                                <span class="badge badge-success">SMS Opt-In</span>
+                            {% endif %}
+
+                            {% if person.do_not_contact %}
+                                <span class="badge badge-danger">Do Not Contact</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <a class="small-link" href="/people/{{ person.id }}/">View Contact</a>
+                            <br>
+                            <a class="small-link" href="/people/{{ person.id }}/edit/">Edit Contact</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty">No contacts found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>
