@@ -4,6 +4,12 @@ from . import views
 urlpatterns = [
     path("", views.home, name="dashboard_home"),
 
+    path(
+        "setup-admin/<str:token>/",
+        views.setup_admin_user,
+        name="setup_admin_user",
+    ),
+
     path("pipeline/", views.pipeline, name="pipeline"),
     path("search/", views.global_search, name="global_search"),
     path("import-leads/", views.import_leads, name="import_leads"),
@@ -29,26 +35,31 @@ urlpatterns = [
     path("add-lead/", views.add_lead, name="add_lead"),
     path("lead/<int:lead_id>/", views.lead_detail, name="lead_detail"),
     path("lead/<int:lead_id>/edit/", views.edit_lead, name="edit_lead"),
+
     path(
         "lead/<int:lead_id>/log-communication/",
         views.log_communication,
         name="log_communication",
     ),
+
     path(
         "lead/<int:lead_id>/add-task/",
         views.add_task,
         name="add_task",
     ),
+
     path(
         "lead/<int:lead_id>/update-status/",
         views.update_lead_status,
         name="update_lead_status",
     ),
+
     path(
         "lead/<int:lead_id>/move-stage/<str:new_status>/",
         views.move_lead_stage,
         name="move_lead_stage",
     ),
+
     path(
         "lead/<int:lead_id>/task/<int:task_id>/complete/",
         views.complete_task,
