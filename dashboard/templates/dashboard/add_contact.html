@@ -328,13 +328,13 @@
     <a class="nav-link" href="/campaigns/">Campaigns</a>
     <a class="nav-link" href="/people/">Contacts</a>
     <a class="nav-link" href="/properties/">Properties</a>
+    <a class="nav-link" href="/tasks/">Tasks</a>
 
-    {% if request.user.is_staff %}
-    <a class="nav-link" href="/admin/leads/lead/">Leads</a>
-    <a class="nav-link" href="/admin/tasks/task/">Tasks</a>
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <a class="nav-link" href="/admin/leads/lead/">Leads Admin</a>
     {% endif %}
 
-    {% if request.user.is_staff %}
+    {% if request.user.is_staff or request.user.is_superuser %}
     <div class="nav-section-title">Operations</div>
     <a class="nav-link" href="/admin/services/service/">Services</a>
     <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
@@ -348,10 +348,11 @@
     <a class="nav-link" href="/add-lead/">+ Add Lead</a>
     <a class="nav-link" href="/people/add/">+ Add Contact</a>
     <a class="nav-link" href="/properties/add/">+ Add Property</a>
+    <a class="nav-link" href="/tasks/add/">+ Add Task</a>
     <a class="nav-link" href="/import-leads/">+ Import Leads</a>
     <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
 
-    {% if request.user.is_staff %}
+    {% if request.user.is_staff or request.user.is_superuser %}
     <div class="nav-section-title">System</div>
     <a class="nav-link" href="/users/">User Access</a>
     <a class="nav-link" href="/admin/">Admin Panel</a>
@@ -362,7 +363,6 @@
         <button type="submit" class="logout-button">Logout</button>
     </form>
 </aside>
-
     <main class="main">
 
         <div class="topbar">

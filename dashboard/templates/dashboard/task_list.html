@@ -1,0 +1,483 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tasks - New Neighbors CRM</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-dark: #172554;
+            --primary-light: #3b82f6;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --danger: #b91c1c;
+            --success: #15803d;
+            --warning: #b45309;
+            --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            --radius: 14px;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--primary);
+            color: var(--white);
+            padding: 24px 18px;
+            box-sizing: border-box;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .sidebar-brand img {
+            width: 48px;
+            height: auto;
+            border-radius: 10px;
+            background: var(--white);
+            padding: 4px;
+        }
+
+        .sidebar-brand h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .sidebar-brand p {
+            font-size: 12px;
+            margin: 2px 0 0;
+            color: var(--accent);
+        }
+
+        .nav-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin: 22px 0 8px;
+            letter-spacing: 0.08em;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--white);
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--primary-dark);
+        }
+
+        .logout-form {
+            margin-top: 24px;
+        }
+
+        .logout-button {
+            width: 100%;
+            border: none;
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .main {
+            flex: 1;
+            padding: 28px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .page-header h2 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 28px;
+        }
+
+        .page-header p {
+            margin: 6px 0 0;
+            color: var(--muted);
+        }
+
+        .button {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--white);
+            padding: 11px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background: var(--primary-dark);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .stat-number {
+            color: var(--primary-dark);
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .filters {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin-bottom: 22px;
+            display: flex;
+            gap: 12px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-field label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+
+        .filter-field select {
+            padding: 9px 10px;
+            border-radius: 9px;
+            border: 1px solid var(--border);
+            min-width: 180px;
+        }
+
+        .task-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px;
+            margin-bottom: 14px;
+            border-left: 6px solid var(--primary-light);
+        }
+
+        .task-card.priority-high,
+        .task-card.priority-urgent {
+            border-left-color: var(--danger);
+        }
+
+        .task-card.priority-normal {
+            border-left-color: var(--primary-light);
+        }
+
+        .task-card.priority-low {
+            border-left-color: var(--success);
+        }
+
+        .task-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .task-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .task-description {
+            color: var(--text);
+            margin: 8px 0;
+            line-height: 1.45;
+        }
+
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: var(--primary-dark);
+            font-size: 12px;
+        }
+
+        .pill.danger {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .pill.success {
+            background: #dcfce7;
+            color: var(--success);
+        }
+
+        .pill.warning {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .small-button {
+            display: inline-block;
+            padding: 8px 11px;
+            border-radius: 9px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            background: var(--accent);
+            color: var(--primary-dark);
+        }
+
+        .small-button.complete {
+            background: #dcfce7;
+            color: var(--success);
+        }
+
+        .empty-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+    <div class="sidebar-brand">
+        <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+        <div class="sidebar-brand-text">
+            <h1>New Neighbors</h1>
+            <p>CRM Platform</p>
+        </div>
+    </div>
+
+    <div class="nav-section-title">Main</div>
+    <a class="nav-link" href="/">Dashboard</a>
+    <a class="nav-link" href="/pipeline/">Pipeline</a>
+    <a class="nav-link" href="/search/">Search</a>
+    <a class="nav-link" href="/campaigns/">Campaigns</a>
+    <a class="nav-link" href="/people/">Contacts</a>
+    <a class="nav-link" href="/properties/">Properties</a>
+    <a class="nav-link" href="/tasks/">Tasks</a>
+
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <a class="nav-link" href="/admin/leads/lead/">Leads Admin</a>
+    {% endif %}
+
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="nav-section-title">Operations</div>
+    <a class="nav-link" href="/admin/services/service/">Services</a>
+    <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+    <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+    <a class="nav-link" href="/admin/documents/document/">Documents</a>
+    <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+    <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+    {% endif %}
+
+    <div class="nav-section-title">Quick Add</div>
+    <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+    <a class="nav-link" href="/people/add/">+ Add Contact</a>
+    <a class="nav-link" href="/properties/add/">+ Add Property</a>
+    <a class="nav-link" href="/tasks/add/">+ Add Task</a>
+    <a class="nav-link" href="/import-leads/">+ Import Leads</a>
+    <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
+
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="nav-section-title">System</div>
+    <a class="nav-link" href="/users/">User Access</a>
+    <a class="nav-link" href="/admin/">Admin Panel</a>
+    {% endif %}
+
+    <form method="post" action="/accounts/logout/" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">Logout</button>
+    </form>
+</aside>
+    <main class="main">
+        <div class="page-header">
+            <div>
+                <h2>Tasks</h2>
+                <p>Track follow-ups, reminders, client work, and property-related to-dos.</p>
+            </div>
+            <a class="button" href="/tasks/add/">+ Add Task</a>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Open Tasks</div>
+                <div class="stat-number">{{ open_tasks_count }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">In Progress</div>
+                <div class="stat-number">{{ in_progress_tasks_count }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Overdue</div>
+                <div class="stat-number">{{ overdue_tasks_count }}</div>
+            </div>
+        </div>
+
+        <form method="get" class="filters">
+            <div class="filter-field">
+                <label>Status</label>
+                <select name="status">
+                    <option value="all" {% if status_filter == "all" %}selected{% endif %}>All Statuses</option>
+                    {% for value, label in task_statuses %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-field">
+                <label>Priority</label>
+                <select name="priority">
+                    <option value="all" {% if priority_filter == "all" %}selected{% endif %}>All Priorities</option>
+                    {% for value, label in task_priorities %}
+                    <option value="{{ value }}" {% if priority_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button class="button" type="submit">Filter</button>
+        </form>
+
+        {% for task in tasks %}
+        <div class="task-card priority-{{ task.priority }}">
+            <div class="task-top">
+                <div>
+                    <div class="task-title">{{ task.title }}</div>
+
+                    {% if task.description %}
+                    <div class="task-description">{{ task.description }}</div>
+                    {% endif %}
+
+                    <div class="task-meta">
+                        <span class="pill">{{ task.get_status_display }}</span>
+
+                        {% if task.priority == "urgent" or task.priority == "high" %}
+                        <span class="pill danger">{{ task.get_priority_display }}</span>
+                        {% elif task.priority == "low" %}
+                        <span class="pill success">{{ task.get_priority_display }}</span>
+                        {% else %}
+                        <span class="pill">{{ task.get_priority_display }}</span>
+                        {% endif %}
+
+                        {% if task.due_date %}
+                        <span class="pill warning">Due {{ task.due_date }}</span>
+                        {% endif %}
+
+                        {% if task.related_person %}
+                        <span class="pill">Contact: {{ task.related_person }}</span>
+                        {% endif %}
+
+                        {% if task.related_property %}
+                        <span class="pill">Property: {{ task.related_property }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="task-actions">
+                    {% if task.status != "completed" %}
+                    <form method="post" action="/tasks/{{ task.id }}/complete/">
+                        {% csrf_token %}
+                        <button class="small-button complete" type="submit">Complete</button>
+                    </form>
+                    {% endif %}
+
+                    <a class="small-button" href="/tasks/{{ task.id }}/edit/">Edit</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-card">
+            No tasks found for the selected filters.
+        </div>
+        {% endfor %}
+    </main>
+</div>
+</body>
+</html>

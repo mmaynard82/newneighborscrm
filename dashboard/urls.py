@@ -24,6 +24,11 @@ urlpatterns = [
     path("properties/<int:property_id>/", views.property_detail, name="property_detail"),
     path("properties/<int:property_id>/edit/", views.edit_property, name="edit_property"),
 
+    path("tasks/", views.task_list, name="task_list"),
+    path("tasks/add/", views.add_general_task, name="add_general_task"),
+    path("tasks/<int:task_id>/edit/", views.edit_general_task, name="edit_general_task"),
+    path("tasks/<int:task_id>/complete/", views.complete_general_task, name="complete_general_task"),
+
     path("users/", views.user_access_list, name="user_access_list"),
     path("users/add/", views.add_crm_user, name="add_crm_user"),
     path(

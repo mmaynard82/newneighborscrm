@@ -626,3 +626,36 @@ class EditPropertyForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 6}),
         label="Property Notes",
     )
+
+class GeneralTaskForm(forms.Form):
+        title = forms.CharField(max_length=255, label="Task Title")
+        description = forms.CharField(
+            required=False,
+            widget=forms.Textarea(attrs={"rows": 5}),
+            label="Description",
+        )
+        related_person = forms.ModelChoiceField(
+            queryset=Person.objects.all(),
+            required=False,
+            label="Related Contact",
+        )
+        related_property = forms.ModelChoiceField(
+            queryset=Property.objects.all(),
+            required=False,
+            label="Related Property",
+        )
+        due_date = forms.DateField(
+            required=False,
+            widget=forms.DateInput(attrs={"type": "date"}),
+            label="Due Date",
+        )
+        status = forms.ChoiceField(
+            choices=Task.TASK_STATUSES,
+            initial="open",
+            label="Status",
+        )
+        priority = forms.ChoiceField(
+            choices=Task.PRIORITIES,
+            initial="normal",
+            label="Priority",
+        )

@@ -281,48 +281,56 @@
 <div class="layout">
 
     <aside class="sidebar">
-        <div class="sidebar-brand">
-            <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
-            <div class="sidebar-brand-text">
-                <h1>New Neighbors</h1>
-                <p>CRM Platform</p>
-            </div>
+    <div class="sidebar-brand">
+        <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+        <div class="sidebar-brand-text">
+            <h1>New Neighbors</h1>
+            <p>CRM Platform</p>
         </div>
+    </div>
 
-        <div class="nav-section-title">Main</div>
-        <a class="nav-link" href="/">Dashboard</a>
-        <a class="nav-link" href="/pipeline/">Pipeline</a>
-        <a class="nav-link" href="/search/">Search</a>
-        <a class="nav-link" href="/admin/people/person/">People</a>
-        <a class="nav-link" href="/admin/properties/property/">Properties</a>
-        <a class="nav-link" href="/admin/leads/lead/">Leads</a>
-        <a class="nav-link" href="/admin/tasks/task/">Tasks</a>
+    <div class="nav-section-title">Main</div>
+    <a class="nav-link" href="/">Dashboard</a>
+    <a class="nav-link" href="/pipeline/">Pipeline</a>
+    <a class="nav-link" href="/search/">Search</a>
+    <a class="nav-link" href="/campaigns/">Campaigns</a>
+    <a class="nav-link" href="/people/">Contacts</a>
+    <a class="nav-link" href="/properties/">Properties</a>
+    <a class="nav-link" href="/tasks/">Tasks</a>
 
-        <div class="nav-section-title">Operations</div>
-        <a class="nav-link" href="/admin/services/service/">Services</a>
-        <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
-        <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
-        <a class="nav-link" href="/admin/documents/document/">Documents</a>
-        <a class="nav-link active" href="/admin/communications/communicationlog/">Communication Log</a>
-        <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <a class="nav-link" href="/admin/leads/lead/">Leads Admin</a>
+    {% endif %}
 
-        <div class="nav-section-title">Quick Add</div>
-        <a class="nav-link" href="/add-lead/">+ Add Lead</a>
-        <a class="nav-link" href="/admin/people/person/add/">+ Add Person</a>
-        <a class="nav-link" href="/admin/properties/property/add/">+ Add Property</a>
-        <a class="nav-link" href="/admin/tasks/task/add/">+ Add Task</a>
-        <a class="nav-link" href="/admin/maintenance/maintenancerequest/add/">+ Add Maintenance</a>
-        <a class="nav-link" href="/admin/inspections/homeinspection/add/">+ Add Inspection</a>
-        <a class="nav-link" href="/admin/documents/document/add/">+ Add Document</a>
-        <a class="nav-link" href="/admin/communications/communicationlog/add/">+ Add Communication</a>
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="nav-section-title">Operations</div>
+    <a class="nav-link" href="/admin/services/service/">Services</a>
+    <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+    <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+    <a class="nav-link" href="/admin/documents/document/">Documents</a>
+    <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+    <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+    {% endif %}
 
-        <div class="nav-section-title">System</div>
-        <a class="nav-link" href="/admin/">Admin Panel</a>
-        <form method="post" action="/accounts/logout/" class="logout-form">
-    {% csrf_token %}
-    <button type="submit" class="logout-button">Logout</button>
-</form>
-    </aside>
+    <div class="nav-section-title">Quick Add</div>
+    <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+    <a class="nav-link" href="/people/add/">+ Add Contact</a>
+    <a class="nav-link" href="/properties/add/">+ Add Property</a>
+    <a class="nav-link" href="/tasks/add/">+ Add Task</a>
+    <a class="nav-link" href="/import-leads/">+ Import Leads</a>
+    <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
+
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="nav-section-title">System</div>
+    <a class="nav-link" href="/users/">User Access</a>
+    <a class="nav-link" href="/admin/">Admin Panel</a>
+    {% endif %}
+
+    <form method="post" action="/accounts/logout/" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">Logout</button>
+    </form>
+</aside>
 
     <main class="main">
 

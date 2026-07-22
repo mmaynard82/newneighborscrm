@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ page_title }} - New Neighbors CRM</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-dark: #172554;
+            --primary-light: #3b82f6;
+            --accent: #dbeafe;
+            --bg: #f3f6fb;
+            --white: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            --radius: 14px;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--primary);
+            color: var(--white);
+            padding: 24px 18px;
+            box-sizing: border-box;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .sidebar-brand img {
+            width: 48px;
+            height: auto;
+            border-radius: 10px;
+            background: var(--white);
+            padding: 4px;
+        }
+
+        .sidebar-brand h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .sidebar-brand p {
+            font-size: 12px;
+            margin: 2px 0 0;
+            color: var(--accent);
+        }
+
+        .nav-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin: 22px 0 8px;
+            letter-spacing: 0.08em;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--white);
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--primary-dark);
+        }
+
+        .logout-form {
+            margin-top: 24px;
+        }
+
+        .logout-button {
+            width: 100%;
+            border: none;
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .main {
+            flex: 1;
+            padding: 28px;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-header h2 {
+            margin: 0;
+            color: var(--primary-dark);
+            font-size: 28px;
+        }
+
+        .page-header p {
+            margin: 6px 0 0;
+            color: var(--muted);
+        }
+
+        .form-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            max-width: 760px;
+        }
+
+        .form-row {
+            margin-bottom: 16px;
+        }
+
+        .form-row label {
+            display: block;
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .form-row input,
+        .form-row select,
+        .form-row textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 12px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-row textarea {
+            resize: vertical;
+        }
+
+        .errorlist {
+            color: #b91c1c;
+            margin: 6px 0;
+            padding-left: 18px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .button {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--white);
+            padding: 11px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background: var(--primary-dark);
+        }
+
+        .secondary-button {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--primary-dark);
+            padding: 11px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+    <div class="sidebar-brand">
+        <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+        <div class="sidebar-brand-text">
+            <h1>New Neighbors</h1>
+            <p>CRM Platform</p>
+        </div>
+    </div>
+
+    <div class="nav-section-title">Main</div>
+    <a class="nav-link" href="/">Dashboard</a>
+    <a class="nav-link" href="/pipeline/">Pipeline</a>
+    <a class="nav-link" href="/search/">Search</a>
+    <a class="nav-link" href="/campaigns/">Campaigns</a>
+    <a class="nav-link" href="/people/">Contacts</a>
+    <a class="nav-link" href="/properties/">Properties</a>
+    <a class="nav-link" href="/tasks/">Tasks</a>
+
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <a class="nav-link" href="/admin/leads/lead/">Leads Admin</a>
+    {% endif %}
+
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="nav-section-title">Operations</div>
+    <a class="nav-link" href="/admin/services/service/">Services</a>
+    <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+    <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+    <a class="nav-link" href="/admin/documents/document/">Documents</a>
+    <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+    <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+    {% endif %}
+
+    <div class="nav-section-title">Quick Add</div>
+    <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+    <a class="nav-link" href="/people/add/">+ Add Contact</a>
+    <a class="nav-link" href="/properties/add/">+ Add Property</a>
+    <a class="nav-link" href="/tasks/add/">+ Add Task</a>
+    <a class="nav-link" href="/import-leads/">+ Import Leads</a>
+    <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
+
+    {% if request.user.is_staff or request.user.is_superuser %}
+    <div class="nav-section-title">System</div>
+    <a class="nav-link" href="/users/">User Access</a>
+    <a class="nav-link" href="/admin/">Admin Panel</a>
+    {% endif %}
+
+    <form method="post" action="/accounts/logout/" class="logout-form">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">Logout</button>
+    </form>
+</aside>
+
+    <main class="main">
+        <div class="page-header">
+            <h2>{{ page_title }}</h2>
+            <p>Create or update a CRM task without using the Django admin panel.</p>
+        </div>
+
+        <div class="form-card">
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                <div class="form-row">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+                {% endfor %}
+
+                <div class="button-row">
+                    <button class="button" type="submit">{{ button_text }}</button>
+                    <a class="secondary-button" href="/tasks/">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>
