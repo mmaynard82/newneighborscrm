@@ -1,16 +1,13 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Properties | New Neighbors CRM</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <title>Properties - New Neighbors CRM</title>
     <style>
         :root {
             --primary: #1e3a8a;
-            --primary-light: #3b82f6;
             --primary-dark: #172554;
+            --primary-light: #3b82f6;
             --accent: #dbeafe;
             --bg: #f3f6fb;
             --white: #ffffff;
@@ -20,8 +17,6 @@
             --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
             --radius: 14px;
         }
-
-        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -36,365 +31,331 @@
         }
 
         .sidebar {
-            width: 260px;
-            background: var(--primary-dark);
-            color: white;
+            width: 250px;
+            background: var(--primary);
+            color: var(--white);
             padding: 24px 18px;
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            overflow-y: auto;
+            box-sizing: border-box;
+            flex-shrink: 0;
         }
 
         .sidebar-brand {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 34px;
+            margin-bottom: 28px;
         }
 
         .sidebar-brand img {
-            width: 54px;
-            height: 54px;
-            object-fit: contain;
-            background: white;
-            border-radius: 12px;
+            width: 48px;
+            height: auto;
+            border-radius: 10px;
+            background: var(--white);
             padding: 4px;
         }
 
-        .sidebar-brand-text h1 {
+        .sidebar-brand h1 {
             font-size: 18px;
             margin: 0;
         }
 
-        .sidebar-brand-text p {
+        .sidebar-brand p {
             font-size: 12px;
-            margin: 4px 0 0 0;
-            color: #cbd5e1;
+            margin: 2px 0 0;
+            color: var(--accent);
         }
 
         .nav-section-title {
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
-            color: #93c5fd;
-            letter-spacing: .08em;
-            margin: 22px 0 8px 8px;
+            color: var(--accent);
+            margin: 22px 0 8px;
+            letter-spacing: 0.08em;
         }
 
         .nav-link {
             display: block;
-            color: #e5efff;
+            color: var(--white);
             text-decoration: none;
-            padding: 11px 12px;
+            padding: 10px 12px;
             border-radius: 10px;
+            margin-bottom: 6px;
             font-size: 14px;
-            margin-bottom: 4px;
         }
 
-        .nav-link:hover {
-            background: rgba(255,255,255,.12);
-        }
-
+        .nav-link:hover,
         .nav-link.active {
-            background: var(--primary-light);
-            color: white;
-            font-weight: bold;
+            background: var(--primary-dark);
         }
 
         .logout-form {
-            margin: 0;
+            margin-top: 24px;
         }
 
         .logout-button {
             width: 100%;
-            display: block;
-            color: #e5efff;
-            background: transparent;
             border: none;
-            text-align: left;
-            padding: 11px 12px;
+            background: var(--primary-dark);
+            color: var(--white);
+            padding: 10px 12px;
             border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 4px;
             cursor: pointer;
-            font-family: Arial, sans-serif;
-        }
-
-        .logout-button:hover {
-            background: rgba(255,255,255,.12);
+            font-size: 14px;
         }
 
         .main {
-            margin-left: 260px;
-            width: calc(100% - 260px);
-            padding: 24px;
+            flex: 1;
+            padding: 28px;
         }
 
-        .topbar {
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 18px 22px;
+        .page-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            gap: 20px;
+            align-items: flex-start;
+            gap: 16px;
             margin-bottom: 24px;
         }
 
-        .topbar h2 {
+        .page-header h2 {
             margin: 0;
-            color: var(--primary);
-            font-size: 26px;
+            color: var(--primary-dark);
+            font-size: 28px;
         }
 
-        .topbar p {
-            margin: 4px 0 0 0;
+        .page-header p {
+            margin: 6px 0 0;
             color: var(--muted);
-            font-size: 14px;
         }
 
-        .top-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            text-decoration: none;
-            padding: 11px 15px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 14px;
+        .button {
             display: inline-block;
+            background: var(--primary);
+            color: var(--white);
+            padding: 11px 16px;
+            border-radius: 10px;
+            text-decoration: none;
             border: none;
             cursor: pointer;
-            font-family: Arial, sans-serif;
+            font-size: 14px;
         }
 
-        .btn-primary {
-            background: var(--primary);
-            color: white;
+        .button:hover {
+            background: var(--primary-dark);
         }
 
-        .btn-secondary {
-            background: var(--accent);
-            color: var(--primary);
-        }
-
-        .section {
+        .search-card {
             background: var(--white);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 22px;
-            margin-bottom: 24px;
-        }
-
-        .section h3 {
-            margin: 0 0 14px 0;
-            color: var(--primary);
-            font-size: 21px;
-        }
-
-        .search-form {
+            padding: 16px;
+            margin-bottom: 22px;
             display: flex;
             gap: 10px;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
+            align-items: center;
         }
 
-        .search-form input {
+        .search-card input {
             flex: 1;
-            min-width: 260px;
-            padding: 12px 13px;
-            border: 1px solid var(--border);
+            padding: 11px 12px;
             border-radius: 10px;
-            font-size: 15px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: var(--accent);
-            color: var(--primary);
-            text-align: left;
-            padding: 12px;
+            border: 1px solid var(--border);
             font-size: 14px;
         }
 
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 14px;
-            vertical-align: top;
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
+            gap: 16px;
         }
 
-        tbody tr:nth-child(even) {
-            background: #f8fbff;
+        .property-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px;
         }
 
-        .small-link {
-            color: var(--primary);
+        .property-address {
+            font-size: 18px;
             font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .property-address a {
+            color: var(--primary-dark);
             text-decoration: none;
         }
 
-        .small-link:hover {
+        .property-address a:hover {
             text-decoration: underline;
         }
 
-        .empty {
+        .property-meta {
             color: var(--muted);
-            font-style: italic;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .small-button {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--primary-dark);
+            padding: 8px 11px;
+            border-radius: 9px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .empty-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px;
+            text-align: center;
+            color: var(--muted);
         }
 
         @media (max-width: 900px) {
             .layout {
-                display: block;
+                flex-direction: column;
             }
 
             .sidebar {
-                position: relative;
                 width: 100%;
             }
 
-            .main {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            .topbar {
+            .page-header {
                 flex-direction: column;
-                align-items: flex-start;
+            }
+
+            .search-card {
+                flex-direction: column;
+                align-items: stretch;
             }
         }
     </style>
 </head>
-
 <body>
-
 <div class="layout">
-
     <aside class="sidebar">
-    <div class="sidebar-brand">
-        <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
-        <div class="sidebar-brand-text">
-            <h1>New Neighbors</h1>
-            <p>CRM Platform</p>
+        <div class="sidebar-brand">
+            <img src="{% static 'dashboard/nn_logo.png' %}" alt="New Neighbors Logo">
+            <div class="sidebar-brand-text">
+                <h1>New Neighbors</h1>
+                <p>CRM Platform</p>
+            </div>
         </div>
-    </div>
 
-    <div class="nav-section-title">Main</div>
-    <a class="nav-link" href="/">Dashboard</a>
-    <a class="nav-link" href="/pipeline/">Pipeline</a>
-    <a class="nav-link" href="/search/">Search</a>
-    <a class="nav-link" href="/campaigns/">Campaigns</a>
-    <a class="nav-link" href="/people/">Contacts</a>
-    <a class="nav-link" href="/properties/">Properties</a>
-    <a class="nav-link" href="/tasks/">Tasks</a>
+        <div class="nav-section-title">Main</div>
+        <a class="nav-link" href="/">Dashboard</a>
+        <a class="nav-link" href="/pipeline/">Pipeline</a>
+        <a class="nav-link" href="/search/">Search</a>
+        <a class="nav-link" href="/campaigns/">Campaigns</a>
+        <a class="nav-link" href="/people/">Contacts</a>
+        <a class="nav-link active" href="/properties/">Properties</a>
+        <a class="nav-link" href="/tasks/">Tasks</a>
 
-    {% if request.user.is_staff or request.user.is_superuser %}
-    <a class="nav-link" href="/admin/leads/lead/">Leads Admin</a>
-    {% endif %}
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <a class="nav-link" href="/admin/leads/lead/">Leads Admin</a>
+        {% endif %}
 
-    {% if request.user.is_staff or request.user.is_superuser %}
-    <div class="nav-section-title">Operations</div>
-    <a class="nav-link" href="/admin/services/service/">Services</a>
-    <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
-    <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
-    <a class="nav-link" href="/admin/documents/document/">Documents</a>
-    <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
-    <a class="nav-link" href="/admin/tags/tag/">Tags</a>
-    {% endif %}
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <div class="nav-section-title">Operations</div>
+        <a class="nav-link" href="/admin/services/service/">Services</a>
+        <a class="nav-link" href="/admin/maintenance/maintenancerequest/">Maintenance</a>
+        <a class="nav-link" href="/admin/inspections/homeinspection/">Inspections</a>
+        <a class="nav-link" href="/admin/documents/document/">Documents</a>
+        <a class="nav-link" href="/admin/communications/communicationlog/">Communication Log</a>
+        <a class="nav-link" href="/admin/tags/tag/">Tags</a>
+        {% endif %}
 
-    <div class="nav-section-title">Quick Add</div>
-    <a class="nav-link" href="/add-lead/">+ Add Lead</a>
-    <a class="nav-link" href="/people/add/">+ Add Contact</a>
-    <a class="nav-link" href="/properties/add/">+ Add Property</a>
-    <a class="nav-link" href="/tasks/add/">+ Add Task</a>
-    <a class="nav-link" href="/import-leads/">+ Import Leads</a>
-    <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
+        <div class="nav-section-title">Quick Add</div>
+        <a class="nav-link" href="/add-lead/">+ Add Lead</a>
+        <a class="nav-link" href="/people/add/">+ Add Contact</a>
+        <a class="nav-link" href="/properties/add/">+ Add Property</a>
+        <a class="nav-link" href="/tasks/add/">+ Add Task</a>
+        <a class="nav-link" href="/import-leads/">+ Import Leads</a>
+        <a class="nav-link" href="/campaigns/add/">+ Add Campaign</a>
 
-    {% if request.user.is_staff or request.user.is_superuser %}
-    <div class="nav-section-title">System</div>
-    <a class="nav-link" href="/users/">User Access</a>
-    <a class="nav-link" href="/admin/">Admin Panel</a>
-    {% endif %}
+        {% if request.user.is_staff or request.user.is_superuser %}
+        <div class="nav-section-title">System</div>
+        <a class="nav-link" href="/users/">User Access</a>
+        <a class="nav-link" href="/admin/">Admin Panel</a>
+        {% endif %}
 
-    <form method="post" action="/accounts/logout/" class="logout-form">
-        {% csrf_token %}
-        <button type="submit" class="logout-button">Logout</button>
-    </form>
-</aside>
+        <form method="post" action="/accounts/logout/" class="logout-form">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </aside>
+
     <main class="main">
-
-        <div class="topbar">
+        <div class="page-header">
             <div>
                 <h2>Properties</h2>
-                <p>{{ property_count }} visible properties</p>
+                <p>View property records connected to owners, leads, services, and tasks.</p>
             </div>
-
-            <div class="top-actions">
-                <a class="btn btn-secondary" href="/">Dashboard</a>
-                <a class="btn btn-primary" href="/admin/properties/property/add/">Add Property</a>
-            </div>
+            <a class="button" href="/properties/add/">+ Add Property</a>
         </div>
 
-        <div class="section">
-            <h3>Search Properties</h3>
+        <form method="get" class="search-card">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search by address, city, owner, or notes">
+            <button class="button" type="submit">Search</button>
+        </form>
 
-            <form method="get" class="search-form">
-                <input type="text" name="q" value="{{ query }}" placeholder="Search by address, city, owner, zip, or notes">
-                <button class="btn btn-primary" type="submit">Search</button>
-                <a class="btn btn-secondary" href="/properties/">Clear</a>
-            </form>
+        {% if properties %}
+        <div class="property-grid">
+            {% for property in properties %}
+            <div class="property-card">
+                <div class="property-address">
+                    <a href="/properties/{{ property.id }}/">{{ property.address }}</a>
+                </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Property</th>
-                        <th>Type</th>
-                        <th>Owner</th>
-                        <th>Details</th>
-                        <th>Open</th>
-                    </tr>
-                </thead>
+                <div class="property-meta">
+                    {{ property.city }}, {{ property.state }} {{ property.zip_code }}<br>
 
-                <tbody>
-                    {% for property in properties %}
-                    <tr>
-                        <td>
-                            <strong>{{ property.address }}</strong>
-                            <br>
-                            {{ property.city }}, {{ property.state }} {{ property.zip_code }}
-                        </td>
-                        <td>{{ property.get_property_type_display|default:"Not listed" }}</td>
-                        <td>{{ property.owner|default:"Not linked" }}</td>
-                        <td>
-                            {% if property.bedrooms %}{{ property.bedrooms }} bed{% endif %}
-                            {% if property.bathrooms %} · {{ property.bathrooms }} bath{% endif %}
-                            {% if property.square_feet %} · {{ property.square_feet }} sq ft{% endif %}
-                        </td>
-                        <td>
-                            <a class="small-link" href="/properties/{{ property.id }}/">View Property</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="empty">No properties found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    {% if property.get_property_type_display %}
+                    Type: {{ property.get_property_type_display }}<br>
+                    {% endif %}
+
+                    {% if property.owner %}
+                    Owner: {{ property.owner }}<br>
+                    {% endif %}
+
+                    {% if property.bedrooms %}
+                    Bedrooms: {{ property.bedrooms }}<br>
+                    {% endif %}
+
+                    {% if property.bathrooms %}
+                    Bathrooms: {{ property.bathrooms }}<br>
+                    {% endif %}
+
+                    {% if property.square_feet %}
+                    Square Feet: {{ property.square_feet }}<br>
+                    {% endif %}
+                </div>
+
+                <div class="card-actions">
+                    <a class="small-button" href="/properties/{{ property.id }}/">Open</a>
+                    <a class="small-button" href="/properties/{{ property.id }}/edit/">Edit</a>
+                </div>
+            </div>
+            {% endfor %}
         </div>
-
+        {% else %}
+        <div class="empty-card">
+            No properties found.
+        </div>
+        {% endif %}
     </main>
-
 </div>
-
 </body>
 </html>

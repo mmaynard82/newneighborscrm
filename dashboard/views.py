@@ -8,7 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group, User
 from django.db.models import Q
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -23,7 +23,6 @@ from inspections.models import HomeInspection
 from documents.models import Document
 from tags.models import Tag, PersonTag
 from communications.models import CommunicationLog
-from campaigns.models import Campaign
 
 from .access import (
     FULL_ACCESS_GROUP_NAME,
@@ -104,7 +103,6 @@ def setup_admin_user(request, token):
 @login_required
 def home(request):
     allowed_leads = filter_leads_for_user(Lead.objects.all(), request.user)
-
     today = timezone.localdate()
 
     total_people = Person.objects.count()
@@ -244,12 +242,14 @@ def global_search(request):
             | Q(notes__icontains=query)
         )[:20]
 
-        properties = Property.objects.filter(
+        properties = Property.objects.select_related("owner").filter(
             Q(address__icontains=query)
             | Q(city__icontains=query)
             | Q(state__icontains=query)
             | Q(zip_code__icontains=query)
             | Q(notes__icontains=query)
+            | Q(owner__first_name__icontains=query)
+            | Q(owner__last_name__icontains=query)
         )[:20]
 
         leads = Lead.objects.select_related(
@@ -286,7 +286,7 @@ def global_search(request):
         "tasks": tasks,
     }
 
-    return render(request, "dashboard/global_search.html", context)
+    return render(request, "dashboard/search.html", context)
 
 
 @login_required
@@ -464,7 +464,7 @@ def edit_contact(request, person_id):
 def property_list(request):
     query = request.GET.get("q", "").strip()
 
-    properties = Property.objects.select_related("owner").all()
+    properties = Property.objects.select_related("owner").all().order_by("city", "address")
 
     if query:
         properties = properties.filter(
@@ -613,7 +613,6 @@ def edit_property(request, property_id):
 def add_lead(request):
     if request.method == "POST":
         form = AddLeadForm(request.POST)
-
         form.fields["lead_type"].choices = get_allowed_lead_type_choices(request.user)
 
         if form.is_valid():
@@ -908,15 +907,10 @@ def add_task(request, lead_id):
 @require_POST
 def update_lead_status(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
-
     require_lead_access(request.user, lead)
 
     new_status = request.POST.get("status")
-
-    valid_statuses = [
-        status_key
-        for status_key, status_label in Lead.LEAD_STATUSES
-    ]
+    valid_statuses = [status_key for status_key, status_label in Lead.LEAD_STATUSES]
 
     if new_status in valid_statuses:
         lead.status = new_status
@@ -929,13 +923,9 @@ def update_lead_status(request, lead_id):
 @require_POST
 def move_lead_stage(request, lead_id, new_status):
     lead = get_object_or_404(Lead, id=lead_id)
-
     require_lead_access(request.user, lead)
 
-    valid_statuses = [
-        status_key
-        for status_key, status_label in Lead.LEAD_STATUSES
-    ]
+    valid_statuses = [status_key for status_key, status_label in Lead.LEAD_STATUSES]
 
     if new_status in valid_statuses:
         lead.status = new_status
@@ -953,7 +943,6 @@ def move_lead_stage(request, lead_id, new_status):
 @require_POST
 def complete_task(request, lead_id, task_id):
     lead = get_object_or_404(Lead, id=lead_id)
-
     require_lead_access(request.user, lead)
 
     task = get_object_or_404(Task, id=task_id)
@@ -980,7 +969,6 @@ def task_list(request):
         tasks = tasks.filter(priority=priority_filter)
 
     open_tasks_count = Task.objects.filter(status="open").count()
-
     in_progress_tasks_count = Task.objects.filter(status="in_progress").count()
 
     overdue_tasks_count = Task.objects.filter(
@@ -1102,13 +1090,11 @@ def import_leads(request):
             skipped_count = 0
 
             allowed_lead_types = [
-                value
-                for value, label in get_allowed_lead_type_choices(request.user)
+                value for value, label in get_allowed_lead_type_choices(request.user)
             ]
 
             valid_statuses = [
-                value
-                for value, label in Lead.LEAD_STATUSES
+                value for value, label in Lead.LEAD_STATUSES
             ]
 
             for row in reader:
