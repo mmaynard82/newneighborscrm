@@ -122,3 +122,25 @@ class WordPressDraftSyncTests(TestCase):
             response = self.client.post(reverse("landing_pages_wordpress_sync", args=[self.page.id]))
             self.assertEqual(response.status_code, 302)
             sync.assert_called_once_with(self.page)
+
+    def test_success_message_appears_after_draft_sync(self):
+        from unittest.mock import patch
+        user = get_user_model().objects.create_user("message_owner", password="example")
+        workspace = Workspace.objects.create(name="Message CRM", kind="solo")
+        Membership.objects.create(user=user, workspace=workspace, role="owner")
+        page = LandingPage.objects.create(workspace=workspace, title="Example", slug="example", headline="Example")
+        self.client.force_login(user)
+        with patch("landing_pages.views.sync_draft"):
+            response = self.client.post(reverse("landing_pages_wordpress_sync", args=[page.id]), follow=True)
+        self.assertContains(response, "WordPress draft saved.")
+
+    def test_failure_message_appears_after_draft_sync(self):
+        from unittest.mock import patch
+        user = get_user_model().objects.create_user("message_owner2", password="example")
+        workspace = Workspace.objects.create(name="Message CRM 2", kind="solo")
+        Membership.objects.create(user=user, workspace=workspace, role="owner")
+        page = LandingPage.objects.create(workspace=workspace, title="Example", slug="example", headline="Example")
+        self.client.force_login(user)
+        with patch("landing_pages.views.sync_draft", side_effect=RuntimeError("Simulated failure")):
+            response = self.client.post(reverse("landing_pages_wordpress_sync", args=[page.id]), follow=True)
+        self.assertContains(response, "WordPress draft sync failed.")
