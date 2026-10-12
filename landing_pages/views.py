@@ -17,6 +17,7 @@ def list_pages(request):
     workspace = single_workspace_for(request.user)
     return render(request, "landing_pages/list.html", {
         "pages": LandingPage.objects.filter(workspace=workspace).order_by("-updated_at"),
+        "can_sync_wordpress": Membership.objects.filter(workspace=workspace, user=request.user, is_active=True, role__in=["owner", "admin"]).exists(),
     })
 
 
