@@ -21,6 +21,7 @@ urlpatterns = [
     ),
 
     path("campaigns/", include("campaigns.urls")),
+    path("landing-pages/", include("landing_pages.urls")),
 
     path("", include("dashboard.urls")),
 ]
