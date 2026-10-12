@@ -55,24 +55,24 @@ def home(request):
     allowed_leads = filter_leads_for_user(Lead.objects.all(), request.user)
     today = timezone.localdate()
 
-    total_people = Person.objects.count()
-    total_properties = Property.objects.count()
+    total_people = visible_records(Person.objects.all(), request.user).count()
+    total_properties = visible_records(Property.objects.all(), request.user).count()
     new_leads = allowed_leads.filter(status="new").count()
     active_services = Service.objects.filter(status="active").count()
 
-    tasks_due_today = Task.objects.filter(
+    tasks_due_today = visible_records(Task.objects.all(), request.user).filter(
         due_date=today
     ).exclude(
         status="completed"
     ).count()
 
-    overdue_tasks = Task.objects.filter(
+    overdue_tasks = visible_records(Task.objects.all(), request.user).filter(
         due_date__lt=today
     ).exclude(
         status="completed"
     ).count()
 
-    high_priority_tasks = Task.objects.filter(
+    high_priority_tasks = visible_records(Task.objects.all(), request.user).filter(
         priority__in=["high", "urgent"]
     ).exclude(
         status="completed"
@@ -184,7 +184,7 @@ def global_search(request):
     tasks = Task.objects.none()
 
     if query:
-        people = Person.objects.filter(
+        people = visible_records(Person.objects.all(), request.user).filter(
             Q(first_name__icontains=query)
             | Q(last_name__icontains=query)
             | Q(email__icontains=query)
@@ -192,7 +192,7 @@ def global_search(request):
             | Q(notes__icontains=query)
         )[:20]
 
-        properties = Property.objects.select_related("owner").filter(
+        properties = visible_records(Property.objects.select_related("owner"), request.user).filter(
             Q(address__icontains=query)
             | Q(city__icontains=query)
             | Q(state__icontains=query)
@@ -202,10 +202,10 @@ def global_search(request):
             | Q(owner__last_name__icontains=query)
         )[:20]
 
-        leads = Lead.objects.select_related(
+        leads = filter_leads_for_user(Lead.objects.select_related(
             "person",
             "related_property",
-        ).filter(
+        ), request.user).filter(
             Q(person__first_name__icontains=query)
             | Q(person__last_name__icontains=query)
             | Q(person__email__icontains=query)
@@ -928,10 +928,10 @@ def task_list(request):
     if priority_filter != "all":
         tasks = tasks.filter(priority=priority_filter)
 
-    open_tasks_count = Task.objects.filter(status="open").count()
-    in_progress_tasks_count = Task.objects.filter(status="in_progress").count()
+    open_tasks_count = visible_records(Task.objects.all(), request.user).filter(status="open").count()
+    in_progress_tasks_count = visible_records(Task.objects.all(), request.user).filter(status="in_progress").count()
 
-    overdue_tasks_count = Task.objects.filter(
+    overdue_tasks_count = visible_records(Task.objects.all(), request.user).filter(
         due_date__lt=timezone.localdate()
     ).exclude(
         status="completed"
