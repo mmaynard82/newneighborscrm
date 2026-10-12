@@ -16,3 +16,12 @@ def require_record_access(user, record):
     if not record.workspace_id or not Membership.objects.filter(workspace_id=record.workspace_id, user=user, is_active=True).exists():
         raise Http404('Record not found')
     return record
+
+
+def single_workspace_for(user):
+    """Require an unambiguous active workspace until switching UI exists."""
+    from .models import Workspace
+    ids = list(workspace_ids_for(user)[:2])
+    if len(ids) != 1:
+        raise Http404('Choose a workspace before accessing CRM records')
+    return Workspace.objects.get(pk=ids[0])
