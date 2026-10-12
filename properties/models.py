@@ -3,6 +3,7 @@ from people.models import Person
 
 
 class Property(models.Model):
+    workspace = models.ForeignKey("accounts.Workspace", on_delete=models.PROTECT, null=True, blank=True, related_name="properties")
     PROPERTY_TYPES = [
         ("single_family", "Single Family"),
         ("condo", "Condo"),
