@@ -1,0 +1,8 @@
+<!doctype html>
+<html><head><title>Draft Preview</title></head><body>
+<p>Internal test preview only. Not published.</p>
+<h1>{{ page.headline }}</h1>
+<p>{{ page.description|linebreaksbr }}</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">{{ page.button_text }}</button></form>
+<a href="{% url 'landing_pages_list' %}">Back</a>
+</body></html>

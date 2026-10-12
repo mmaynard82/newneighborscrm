@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "tags",
     "communications",
     "campaigns",
+    "landing_pages",
 ]
 
 
