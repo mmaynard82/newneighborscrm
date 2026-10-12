@@ -275,6 +275,7 @@ def add_contact(request):
 
         if form.is_valid():
             person = Person.objects.create(
+                workspace=single_workspace_for(request.user),
                 first_name=form.cleaned_data["first_name"],
                 last_name=form.cleaned_data["last_name"],
                 email=form.cleaned_data["email"],
@@ -442,6 +443,7 @@ def add_property(request):
 
         if form.is_valid():
             property_obj = Property.objects.create(
+                workspace=single_workspace_for(request.user),
                 address=form.cleaned_data["address"],
                 city=form.cleaned_data["city"],
                 state=form.cleaned_data["state"],
@@ -580,6 +582,8 @@ def add_lead(request):
             )
 
             lead = Lead.objects.create(
+                workspace=person.workspace,
+                assigned_agent=request.user,
                 person=person,
                 lead_type=form.cleaned_data["lead_type"],
                 source=form.cleaned_data["source"],
@@ -600,6 +604,8 @@ def add_lead(request):
 
             if form.cleaned_data["create_follow_up_task"] and lead.next_step:
                 Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                     title=lead.next_step,
                     description=f"Follow up for lead: {lead}",
                     related_person=person,
@@ -779,6 +785,8 @@ def log_communication(request, lead_id):
 
             if form.cleaned_data["create_follow_up_task"] and form.cleaned_data["next_step"]:
                 Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                     title=form.cleaned_data["next_step"],
                     description=f"Follow-up from communication with {lead.person}",
                     related_person=lead.person,
@@ -820,6 +828,8 @@ def add_task(request, lead_id):
 
         if form.is_valid():
             task = Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                 title=form.cleaned_data["title"],
                 description=form.cleaned_data["description"],
                 related_person=lead.person,
@@ -948,6 +958,8 @@ def add_general_task(request):
 
         if form.is_valid():
             Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                 title=form.cleaned_data["title"],
                 description=form.cleaned_data["description"],
                 related_person=form.cleaned_data["related_person"],
@@ -1083,6 +1095,7 @@ def import_leads(request):
                         next_follow_up_date = None
 
                 person = Person.objects.create(
+                    workspace=single_workspace_for(request.user),
                     first_name=first_name,
                     last_name=last_name,
                     email=email,
@@ -1092,6 +1105,8 @@ def import_leads(request):
                 )
 
                 lead = Lead.objects.create(
+                    workspace=person.workspace,
+                    assigned_agent=request.user,
                     person=person,
                     lead_type=lead_type,
                     source=source,
