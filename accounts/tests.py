@@ -45,3 +45,18 @@ class IsolationTests(TestCase):
             require_lead_access(first, other)
         with self.assertRaises(Http404):
             require_lead_access(first, legacy)
+
+    def test_contact_and_property_detail_do_not_cross_workspaces(self):
+        from people.models import Person
+        from properties.models import Property
+        from django.urls import reverse
+
+        user = get_user_model().objects.create_user("viewer", password="example")
+        own = Workspace.objects.create(name="Own", kind=Workspace.SOLO)
+        foreign = Workspace.objects.create(name="Foreign", kind=Workspace.BROKERAGE)
+        Membership.objects.create(workspace=own, user=user)
+        contact = Person.objects.create(first_name="Other", workspace=foreign)
+        property_record = Property.objects.create(address="42 Other St", city="Hartford", zip_code="06103", workspace=foreign)
+        self.client.force_login(user)
+        self.assertEqual(self.client.get(reverse("person_detail", kwargs={"person_id": contact.pk})).status_code, 404)
+        self.assertEqual(self.client.get(reverse("property_detail", kwargs={"property_id": property_record.pk})).status_code, 404)
