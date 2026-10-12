@@ -60,3 +60,16 @@ class IsolationTests(TestCase):
         self.client.force_login(user)
         self.assertEqual(self.client.get(reverse("person_detail", kwargs={"person_id": contact.pk})).status_code, 404)
         self.assertEqual(self.client.get(reverse("property_detail", kwargs={"property_id": property_record.pk})).status_code, 404)
+
+
+class WorkspaceBootstrapTests(TestCase):
+    def test_bootstrap_creates_one_owner_and_is_idempotent(self):
+        from django.core.management import call_command
+        from unittest.mock import patch
+        user = get_user_model().objects.create_superuser("bootstrap_owner", "owner@example.test", "example")
+        env = {"CRM_BOOTSTRAP_USERNAME": "bootstrap_owner", "CRM_BOOTSTRAP_WORKSPACE": "New Neighbors", "CRM_BOOTSTRAP_KIND": "brokerage"}
+        with patch.dict("os.environ", env):
+            call_command("bootstrap_workspace")
+            call_command("bootstrap_workspace")
+        self.assertEqual(Workspace.objects.filter(name="New Neighbors").count(), 1)
+        self.assertTrue(Membership.objects.filter(user=user, workspace__name="New Neighbors", role="owner").exists())
