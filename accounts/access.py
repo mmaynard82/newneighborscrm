@@ -25,3 +25,21 @@ def single_workspace_for(user):
     if len(ids) != 1:
         raise Http404('Choose a workspace before accessing CRM records')
     return Workspace.objects.get(pk=ids[0])
+
+
+def scope_crm_form(form, user):
+    """Restrict related-record choices to memberships before validation/rendering."""
+    from people.models import Person
+    from properties.models import Property
+    from leads.models import Lead
+    from tags.models import Tag
+    for field in form.fields.values():
+        queryset = getattr(field, 'queryset', None)
+        if queryset is None:
+            continue
+        model = queryset.model
+        if model in (Person, Property):
+            field.queryset = visible_records(queryset, user)
+        elif model is Lead:
+            field.queryset = visible_records(queryset, user)
+    return form
