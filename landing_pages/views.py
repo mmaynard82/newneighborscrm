@@ -1,7 +1,12 @@
 from django.contrib.auth.decorators import login_required
-from django.http import Http404
+from django.contrib import messages
+from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from accounts.access import single_workspace_for
+from accounts.models import Membership
+from django.views.decorators.http import require_POST
+from django.core.exceptions import ImproperlyConfigured
+from .wordpress import sync_draft
 from .forms import LandingPageForm, LandingInquiryForm
 from .intake import create_landing_inquiry
 from .models import LandingPage
@@ -12,6 +17,7 @@ def list_pages(request):
     workspace = single_workspace_for(request.user)
     return render(request, "landing_pages/list.html", {
         "pages": LandingPage.objects.filter(workspace=workspace).order_by("-updated_at"),
+        "can_sync_wordpress": Membership.objects.filter(workspace=workspace, user=request.user, is_active=True, role__in=["owner", "admin"]).exists(),
     })
 
 
@@ -47,3 +53,19 @@ def preview_page(request, page_id):
         create_landing_inquiry(page, form.cleaned_data)
         return render(request, 'landing_pages/received.html')
     return render(request, 'landing_pages/preview.html', {'page': page, 'form': form})
+
+
+@login_required
+@require_POST
+def sync_wordpress_page(request, page_id):
+    workspace = single_workspace_for(request.user)
+    page = get_object_or_404(LandingPage, pk=page_id, workspace=workspace)
+    if not Membership.objects.filter(workspace=workspace, user=request.user, is_active=True, role__in=["owner", "admin"]).exists():
+        return HttpResponseForbidden("Only a workspace owner or administrator can sync WordPress drafts.")
+    try:
+        sync_draft(page)
+    except (RuntimeError, ImproperlyConfigured):
+        messages.error(request, "WordPress draft sync failed. Check the integration credentials and WordPress permissions.")
+    else:
+        messages.success(request, "WordPress draft saved. It is not publicly published.")
+    return redirect("landing_pages_list")

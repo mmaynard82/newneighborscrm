@@ -80,3 +80,45 @@ class LandingPageIsolationTests(TestCase):
         self.client.post(reverse("landing_pages_preview", args=[page.id]), payload)
         self.client.post(reverse("landing_pages_preview", args=[page.id]), payload)
         self.assertEqual(Person.objects.filter(workspace=workspace, email__iexact=payload["email"]).count(), 1)
+
+
+class WordPressDraftSyncTests(TestCase):
+    def setUp(self):
+        self.owner = get_user_model().objects.create_user("wpowner", password="example")
+        self.agent = get_user_model().objects.create_user("wpagent", password="example")
+        self.other = get_user_model().objects.create_user("wpother", password="example")
+        self.workspace = Workspace.objects.create(name="WP", kind="brokerage")
+        self.foreign = Workspace.objects.create(name="Foreign WP", kind="solo")
+        Membership.objects.create(user=self.owner, workspace=self.workspace, role="owner")
+        Membership.objects.create(user=self.agent, workspace=self.workspace, role="agent")
+        Membership.objects.create(user=self.other, workspace=self.foreign, role="owner")
+        self.page = LandingPage.objects.create(workspace=self.workspace, title="Draft", slug="wp-draft", headline="Draft")
+
+    def test_get_cannot_trigger_sync(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("landing_pages_wordpress_sync", args=[self.page.id]))
+        self.assertEqual(response.status_code, 405)
+
+    def test_agent_cannot_sync(self):
+        from unittest.mock import patch
+        self.client.force_login(self.agent)
+        with patch("landing_pages.views.sync_draft") as sync:
+            response = self.client.post(reverse("landing_pages_wordpress_sync", args=[self.page.id]))
+            self.assertEqual(response.status_code, 403)
+            sync.assert_not_called()
+
+    def test_other_workspace_cannot_sync(self):
+        from unittest.mock import patch
+        self.client.force_login(self.other)
+        with patch("landing_pages.views.sync_draft") as sync:
+            response = self.client.post(reverse("landing_pages_wordpress_sync", args=[self.page.id]))
+            self.assertEqual(response.status_code, 404)
+            sync.assert_not_called()
+
+    def test_owner_sync_uses_draft_function(self):
+        from unittest.mock import patch
+        self.client.force_login(self.owner)
+        with patch("landing_pages.views.sync_draft") as sync:
+            response = self.client.post(reverse("landing_pages_wordpress_sync", args=[self.page.id]))
+            self.assertEqual(response.status_code, 302)
+            sync.assert_called_once_with(self.page)
