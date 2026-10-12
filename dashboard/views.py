@@ -316,9 +316,9 @@ def person_detail(request, person_id):
         request.user,
     )
 
-    owned_properties = Property.objects.filter(owner=person)
+    owned_properties = visible_records(Property.objects.filter(owner=person), request.user)
 
-    related_tasks = Task.objects.filter(
+    related_tasks = visible_records(Task.objects.all(), request.user).filter(
         Q(related_person=person) | Q(related_property__in=owned_properties)
     ).select_related(
         "related_person",
@@ -478,7 +478,7 @@ def property_detail(request, property_id):
         request.user,
     )
 
-    tasks = Task.objects.filter(
+    tasks = visible_records(Task.objects.all(), request.user).filter(
         related_property=property_obj
     ).select_related(
         "related_person",
@@ -646,7 +646,7 @@ def lead_detail(request, lead_id):
         Q(lead=lead) | Q(person=lead.person)
     ).order_by("-communication_date", "-created_at")
 
-    tasks = Task.objects.filter(
+    tasks = visible_records(Task.objects.all(), request.user).filter(
         related_person=lead.person
     ).select_related(
         "related_person",
@@ -905,7 +905,7 @@ def complete_task(request, lead_id, task_id):
     lead = get_object_or_404(Lead, id=lead_id)
     require_lead_access(request.user, lead)
 
-    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id)
+    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id, related_person=lead.person)
     task.status = "completed"
     task.save()
 
