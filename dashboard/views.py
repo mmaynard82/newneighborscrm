@@ -48,58 +48,6 @@ from .forms import (
 )
 
 
-def setup_admin_user(request, token):
-    expected_token = os.environ.get("SETUP_ADMIN_TOKEN", "").strip()
-
-    if not expected_token:
-        return HttpResponse(
-            "SETUP_ADMIN_TOKEN is not configured.",
-            status=500,
-        )
-
-    if token != expected_token:
-        return HttpResponse(
-            "Invalid setup token.",
-            status=403,
-        )
-
-    username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "").strip()
-    email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "").strip()
-    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "").strip()
-
-    if not username or not email or not password:
-        return HttpResponse(
-            "Missing DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, or DJANGO_SUPERUSER_PASSWORD.",
-            status=500,
-        )
-
-    user, created = User.objects.get_or_create(
-        username=username,
-        defaults={
-            "email": email,
-            "is_staff": True,
-            "is_superuser": True,
-            "is_active": True,
-        },
-    )
-
-    user.email = email
-    user.is_staff = True
-    user.is_superuser = True
-    user.is_active = True
-    user.set_password(password)
-    user.save()
-
-    if created:
-        return HttpResponse(
-            f"Admin user '{username}' was created. You can now log in at /admin/."
-        )
-
-    return HttpResponse(
-        f"Admin user '{username}' already existed. Password was reset. You can now log in at /admin/."
-    )
-
-
 @login_required
 def home(request):
     allowed_leads = filter_leads_for_user(Lead.objects.all(), request.user)
