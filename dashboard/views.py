@@ -24,7 +24,7 @@ from documents.models import Document
 from tags.models import Tag, PersonTag
 from communications.models import CommunicationLog
 
-from accounts.access import visible_records, single_workspace_for
+from accounts.access import visible_records, single_workspace_for, scope_crm_form
 
 from .access import (
     FULL_ACCESS_GROUP_NAME,
@@ -273,6 +273,7 @@ def add_contact(request):
     if request.method == "POST":
         form = AddContactForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person = Person.objects.create(
                 workspace=single_workspace_for(request.user),
@@ -360,6 +361,7 @@ def edit_contact(request, person_id):
     if request.method == "POST":
         form = EditContactForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person.first_name = form.cleaned_data["first_name"]
             person.last_name = form.cleaned_data["last_name"]
@@ -441,6 +443,7 @@ def add_property(request):
     if request.method == "POST":
         form = AddPropertyForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             property_obj = Property.objects.create(
                 workspace=single_workspace_for(request.user),
@@ -521,6 +524,7 @@ def edit_property(request, property_id):
     if request.method == "POST":
         form = EditPropertyForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             property_obj.address = form.cleaned_data["address"]
             property_obj.city = form.cleaned_data["city"]
@@ -567,6 +571,7 @@ def add_lead(request):
         form = AddLeadForm(request.POST)
         form.fields["lead_type"].choices = get_allowed_lead_type_choices(request.user)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person = Person.objects.create(
                 first_name=form.cleaned_data["first_name"],
@@ -688,6 +693,7 @@ def edit_lead(request, lead_id):
         form = EditLeadForm(request.POST)
         form.fields["lead_type"].choices = get_allowed_lead_type_choices(request.user)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person = lead.person
 
@@ -760,6 +766,7 @@ def log_communication(request, lead_id):
     if request.method == "POST":
         form = LogCommunicationForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             CommunicationLog.objects.create(
                 person=lead.person,
@@ -826,6 +833,7 @@ def add_task(request, lead_id):
     if request.method == "POST":
         form = AddTaskForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             task = Task.objects.create(
                     workspace=single_workspace_for(request.user),
@@ -956,6 +964,7 @@ def add_general_task(request):
     if request.method == "POST":
         form = GeneralTaskForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             Task.objects.create(
                     workspace=single_workspace_for(request.user),
@@ -991,6 +1000,7 @@ def edit_general_task(request, task_id):
     if request.method == "POST":
         form = GeneralTaskForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             task.title = form.cleaned_data["title"]
             task.description = form.cleaned_data["description"]
@@ -1042,6 +1052,7 @@ def import_leads(request):
     if request.method == "POST":
         form = ImportLeadsForm(request.POST, request.FILES)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             csv_file = form.cleaned_data["csv_file"]
             decoded_file = csv_file.read().decode("utf-8-sig")
@@ -1185,6 +1196,7 @@ def add_crm_user(request):
     if request.method == "POST":
         form = CRMUserCreationForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = form.cleaned_data["is_active"]
@@ -1232,6 +1244,7 @@ def edit_crm_user_access(request, user_id):
     if request.method == "POST":
         form = CRMUserAccessForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             user_obj.is_active = form.cleaned_data["is_active"]
 
