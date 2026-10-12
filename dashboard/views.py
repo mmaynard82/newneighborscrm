@@ -24,6 +24,8 @@ from documents.models import Document
 from tags.models import Tag, PersonTag
 from communications.models import CommunicationLog
 
+from accounts.access import visible_records, single_workspace_for
+
 from .access import (
     FULL_ACCESS_GROUP_NAME,
     REAL_ESTATE_ONLY_GROUP_NAME,
@@ -95,7 +97,7 @@ def home(request):
         "related_property",
     ).order_by("-created_at")[:8]
 
-    upcoming_tasks = Task.objects.select_related(
+    upcoming_tasks = visible_records(Task.objects.all(), request.user).select_related(
         "related_person",
         "related_property",
     ).exclude(
@@ -215,7 +217,7 @@ def global_search(request):
 
         leads = filter_leads_for_user(leads, request.user)[:20]
 
-        tasks = Task.objects.select_related(
+        tasks = visible_records(Task.objects.all(), request.user).select_related(
             "related_person",
             "related_property",
         ).filter(
@@ -242,7 +244,7 @@ def person_list(request):
     query = request.GET.get("q", "").strip()
     person_type = request.GET.get("type", "all")
 
-    people = Person.objects.all()
+    people = visible_records(Person.objects.all(), request.user)
 
     if query:
         people = people.filter(
@@ -306,7 +308,7 @@ def add_contact(request):
 
 @login_required
 def person_detail(request, person_id):
-    person = get_object_or_404(Person, id=person_id)
+    person = get_object_or_404(visible_records(Person.objects.all(), request.user), id=person_id)
 
     leads = filter_leads_for_user(
         Lead.objects.filter(person=person).select_related("related_property"),
@@ -352,7 +354,7 @@ def person_detail(request, person_id):
 
 @login_required
 def edit_contact(request, person_id):
-    person = get_object_or_404(Person, id=person_id)
+    person = get_object_or_404(visible_records(Person.objects.all(), request.user), id=person_id)
 
     if request.method == "POST":
         form = EditContactForm(request.POST)
@@ -412,7 +414,7 @@ def edit_contact(request, person_id):
 def property_list(request):
     query = request.GET.get("q", "").strip()
 
-    properties = Property.objects.select_related("owner").all().order_by("city", "address")
+    properties = visible_records(Property.objects.select_related("owner"), request.user).order_by("city", "address")
 
     if query:
         properties = properties.filter(
@@ -467,7 +469,7 @@ def add_property(request):
 
 @login_required
 def property_detail(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    property_obj = get_object_or_404(visible_records(Property.objects.all(), request.user), id=property_id)
 
     leads = filter_leads_for_user(
         Lead.objects.filter(related_property=property_obj).select_related("person"),
@@ -512,7 +514,7 @@ def property_detail(request, property_id):
 
 @login_required
 def edit_property(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    property_obj = get_object_or_404(visible_records(Property.objects.all(), request.user), id=property_id)
 
     if request.method == "POST":
         form = EditPropertyForm(request.POST)
@@ -893,7 +895,7 @@ def complete_task(request, lead_id, task_id):
     lead = get_object_or_404(Lead, id=lead_id)
     require_lead_access(request.user, lead)
 
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id)
     task.status = "completed"
     task.save()
 
@@ -905,7 +907,7 @@ def task_list(request):
     status_filter = request.GET.get("status", "open")
     priority_filter = request.GET.get("priority", "all")
 
-    tasks = Task.objects.select_related(
+    tasks = visible_records(Task.objects.all(), request.user).select_related(
         "related_person",
         "related_property",
     ).order_by("due_date", "-created_at")
@@ -972,7 +974,7 @@ def add_general_task(request):
 
 @login_required
 def edit_general_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id)
 
     if request.method == "POST":
         form = GeneralTaskForm(request.POST)
@@ -1016,7 +1018,7 @@ def edit_general_task(request, task_id):
 @login_required
 @require_POST
 def complete_general_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id)
     task.status = "completed"
     task.save()
 
