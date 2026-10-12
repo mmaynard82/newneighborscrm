@@ -2,6 +2,7 @@ from django.db import models
 
 
 class Person(models.Model):
+    workspace = models.ForeignKey("accounts.Workspace", on_delete=models.PROTECT, null=True, blank=True, related_name="people")
     PERSON_TYPES = [
         ("lead", "Lead"),
         ("buyer", "Buyer"),

@@ -24,6 +24,8 @@ from documents.models import Document
 from tags.models import Tag, PersonTag
 from communications.models import CommunicationLog
 
+from accounts.access import visible_records, single_workspace_for, scope_crm_form
+
 from .access import (
     FULL_ACCESS_GROUP_NAME,
     REAL_ESTATE_ONLY_GROUP_NAME,
@@ -48,81 +50,29 @@ from .forms import (
 )
 
 
-def setup_admin_user(request, token):
-    expected_token = os.environ.get("SETUP_ADMIN_TOKEN", "").strip()
-
-    if not expected_token:
-        return HttpResponse(
-            "SETUP_ADMIN_TOKEN is not configured.",
-            status=500,
-        )
-
-    if token != expected_token:
-        return HttpResponse(
-            "Invalid setup token.",
-            status=403,
-        )
-
-    username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "").strip()
-    email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "").strip()
-    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "").strip()
-
-    if not username or not email or not password:
-        return HttpResponse(
-            "Missing DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, or DJANGO_SUPERUSER_PASSWORD.",
-            status=500,
-        )
-
-    user, created = User.objects.get_or_create(
-        username=username,
-        defaults={
-            "email": email,
-            "is_staff": True,
-            "is_superuser": True,
-            "is_active": True,
-        },
-    )
-
-    user.email = email
-    user.is_staff = True
-    user.is_superuser = True
-    user.is_active = True
-    user.set_password(password)
-    user.save()
-
-    if created:
-        return HttpResponse(
-            f"Admin user '{username}' was created. You can now log in at /admin/."
-        )
-
-    return HttpResponse(
-        f"Admin user '{username}' already existed. Password was reset. You can now log in at /admin/."
-    )
-
-
 @login_required
 def home(request):
     allowed_leads = filter_leads_for_user(Lead.objects.all(), request.user)
     today = timezone.localdate()
 
-    total_people = Person.objects.count()
-    total_properties = Property.objects.count()
+    total_people = visible_records(Person.objects.all(), request.user).count()
+    total_properties = visible_records(Property.objects.all(), request.user).count()
     new_leads = allowed_leads.filter(status="new").count()
     active_services = Service.objects.filter(status="active").count()
 
-    tasks_due_today = Task.objects.filter(
+    tasks_due_today = visible_records(Task.objects.all(), request.user).filter(
         due_date=today
     ).exclude(
         status="completed"
     ).count()
 
-    overdue_tasks = Task.objects.filter(
+    overdue_tasks = visible_records(Task.objects.all(), request.user).filter(
         due_date__lt=today
     ).exclude(
         status="completed"
     ).count()
 
-    high_priority_tasks = Task.objects.filter(
+    high_priority_tasks = visible_records(Task.objects.all(), request.user).filter(
         priority__in=["high", "urgent"]
     ).exclude(
         status="completed"
@@ -147,7 +97,7 @@ def home(request):
         "related_property",
     ).order_by("-created_at")[:8]
 
-    upcoming_tasks = Task.objects.select_related(
+    upcoming_tasks = visible_records(Task.objects.all(), request.user).select_related(
         "related_person",
         "related_property",
     ).exclude(
@@ -234,7 +184,7 @@ def global_search(request):
     tasks = Task.objects.none()
 
     if query:
-        people = Person.objects.filter(
+        people = visible_records(Person.objects.all(), request.user).filter(
             Q(first_name__icontains=query)
             | Q(last_name__icontains=query)
             | Q(email__icontains=query)
@@ -242,7 +192,7 @@ def global_search(request):
             | Q(notes__icontains=query)
         )[:20]
 
-        properties = Property.objects.select_related("owner").filter(
+        properties = visible_records(Property.objects.select_related("owner"), request.user).filter(
             Q(address__icontains=query)
             | Q(city__icontains=query)
             | Q(state__icontains=query)
@@ -252,10 +202,10 @@ def global_search(request):
             | Q(owner__last_name__icontains=query)
         )[:20]
 
-        leads = Lead.objects.select_related(
+        leads = filter_leads_for_user(Lead.objects.select_related(
             "person",
             "related_property",
-        ).filter(
+        ), request.user).filter(
             Q(person__first_name__icontains=query)
             | Q(person__last_name__icontains=query)
             | Q(person__email__icontains=query)
@@ -267,7 +217,7 @@ def global_search(request):
 
         leads = filter_leads_for_user(leads, request.user)[:20]
 
-        tasks = Task.objects.select_related(
+        tasks = visible_records(Task.objects.all(), request.user).select_related(
             "related_person",
             "related_property",
         ).filter(
@@ -294,7 +244,7 @@ def person_list(request):
     query = request.GET.get("q", "").strip()
     person_type = request.GET.get("type", "all")
 
-    people = Person.objects.all()
+    people = visible_records(Person.objects.all(), request.user)
 
     if query:
         people = people.filter(
@@ -323,8 +273,10 @@ def add_contact(request):
     if request.method == "POST":
         form = AddContactForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person = Person.objects.create(
+                workspace=single_workspace_for(request.user),
                 first_name=form.cleaned_data["first_name"],
                 last_name=form.cleaned_data["last_name"],
                 email=form.cleaned_data["email"],
@@ -358,16 +310,16 @@ def add_contact(request):
 
 @login_required
 def person_detail(request, person_id):
-    person = get_object_or_404(Person, id=person_id)
+    person = get_object_or_404(visible_records(Person.objects.all(), request.user), id=person_id)
 
     leads = filter_leads_for_user(
         Lead.objects.filter(person=person).select_related("related_property"),
         request.user,
     )
 
-    owned_properties = Property.objects.filter(owner=person)
+    owned_properties = visible_records(Property.objects.filter(owner=person), request.user)
 
-    related_tasks = Task.objects.filter(
+    related_tasks = visible_records(Task.objects.all(), request.user).filter(
         Q(related_person=person) | Q(related_property__in=owned_properties)
     ).select_related(
         "related_person",
@@ -404,11 +356,12 @@ def person_detail(request, person_id):
 
 @login_required
 def edit_contact(request, person_id):
-    person = get_object_or_404(Person, id=person_id)
+    person = get_object_or_404(visible_records(Person.objects.all(), request.user), id=person_id)
 
     if request.method == "POST":
         form = EditContactForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person.first_name = form.cleaned_data["first_name"]
             person.last_name = form.cleaned_data["last_name"]
@@ -464,7 +417,7 @@ def edit_contact(request, person_id):
 def property_list(request):
     query = request.GET.get("q", "").strip()
 
-    properties = Property.objects.select_related("owner").all().order_by("city", "address")
+    properties = visible_records(Property.objects.select_related("owner"), request.user).order_by("city", "address")
 
     if query:
         properties = properties.filter(
@@ -490,8 +443,10 @@ def add_property(request):
     if request.method == "POST":
         form = AddPropertyForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             property_obj = Property.objects.create(
+                workspace=single_workspace_for(request.user),
                 address=form.cleaned_data["address"],
                 city=form.cleaned_data["city"],
                 state=form.cleaned_data["state"],
@@ -519,14 +474,14 @@ def add_property(request):
 
 @login_required
 def property_detail(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    property_obj = get_object_or_404(visible_records(Property.objects.all(), request.user), id=property_id)
 
     leads = filter_leads_for_user(
         Lead.objects.filter(related_property=property_obj).select_related("person"),
         request.user,
     )
 
-    tasks = Task.objects.filter(
+    tasks = visible_records(Task.objects.all(), request.user).filter(
         related_property=property_obj
     ).select_related(
         "related_person",
@@ -564,11 +519,12 @@ def property_detail(request, property_id):
 
 @login_required
 def edit_property(request, property_id):
-    property_obj = get_object_or_404(Property, id=property_id)
+    property_obj = get_object_or_404(visible_records(Property.objects.all(), request.user), id=property_id)
 
     if request.method == "POST":
         form = EditPropertyForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             property_obj.address = form.cleaned_data["address"]
             property_obj.city = form.cleaned_data["city"]
@@ -615,6 +571,7 @@ def add_lead(request):
         form = AddLeadForm(request.POST)
         form.fields["lead_type"].choices = get_allowed_lead_type_choices(request.user)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person = Person.objects.create(
                 first_name=form.cleaned_data["first_name"],
@@ -630,6 +587,8 @@ def add_lead(request):
             )
 
             lead = Lead.objects.create(
+                workspace=person.workspace,
+                assigned_agent=request.user,
                 person=person,
                 lead_type=form.cleaned_data["lead_type"],
                 source=form.cleaned_data["source"],
@@ -650,6 +609,8 @@ def add_lead(request):
 
             if form.cleaned_data["create_follow_up_task"] and lead.next_step:
                 Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                     title=lead.next_step,
                     description=f"Follow up for lead: {lead}",
                     related_person=person,
@@ -690,7 +651,7 @@ def lead_detail(request, lead_id):
         Q(lead=lead) | Q(person=lead.person)
     ).order_by("-communication_date", "-created_at")
 
-    tasks = Task.objects.filter(
+    tasks = visible_records(Task.objects.all(), request.user).filter(
         related_person=lead.person
     ).select_related(
         "related_person",
@@ -732,6 +693,7 @@ def edit_lead(request, lead_id):
         form = EditLeadForm(request.POST)
         form.fields["lead_type"].choices = get_allowed_lead_type_choices(request.user)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             person = lead.person
 
@@ -804,6 +766,7 @@ def log_communication(request, lead_id):
     if request.method == "POST":
         form = LogCommunicationForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             CommunicationLog.objects.create(
                 person=lead.person,
@@ -829,6 +792,8 @@ def log_communication(request, lead_id):
 
             if form.cleaned_data["create_follow_up_task"] and form.cleaned_data["next_step"]:
                 Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                     title=form.cleaned_data["next_step"],
                     description=f"Follow-up from communication with {lead.person}",
                     related_person=lead.person,
@@ -868,8 +833,11 @@ def add_task(request, lead_id):
     if request.method == "POST":
         form = AddTaskForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             task = Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                 title=form.cleaned_data["title"],
                 description=form.cleaned_data["description"],
                 related_person=lead.person,
@@ -945,7 +913,7 @@ def complete_task(request, lead_id, task_id):
     lead = get_object_or_404(Lead, id=lead_id)
     require_lead_access(request.user, lead)
 
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id, related_person=lead.person)
     task.status = "completed"
     task.save()
 
@@ -957,7 +925,7 @@ def task_list(request):
     status_filter = request.GET.get("status", "open")
     priority_filter = request.GET.get("priority", "all")
 
-    tasks = Task.objects.select_related(
+    tasks = visible_records(Task.objects.all(), request.user).select_related(
         "related_person",
         "related_property",
     ).order_by("due_date", "-created_at")
@@ -968,10 +936,10 @@ def task_list(request):
     if priority_filter != "all":
         tasks = tasks.filter(priority=priority_filter)
 
-    open_tasks_count = Task.objects.filter(status="open").count()
-    in_progress_tasks_count = Task.objects.filter(status="in_progress").count()
+    open_tasks_count = visible_records(Task.objects.all(), request.user).filter(status="open").count()
+    in_progress_tasks_count = visible_records(Task.objects.all(), request.user).filter(status="in_progress").count()
 
-    overdue_tasks_count = Task.objects.filter(
+    overdue_tasks_count = visible_records(Task.objects.all(), request.user).filter(
         due_date__lt=timezone.localdate()
     ).exclude(
         status="completed"
@@ -996,8 +964,11 @@ def add_general_task(request):
     if request.method == "POST":
         form = GeneralTaskForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             Task.objects.create(
+                    workspace=single_workspace_for(request.user),
+                    assigned_agent=request.user,
                 title=form.cleaned_data["title"],
                 description=form.cleaned_data["description"],
                 related_person=form.cleaned_data["related_person"],
@@ -1024,11 +995,12 @@ def add_general_task(request):
 
 @login_required
 def edit_general_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id)
 
     if request.method == "POST":
         form = GeneralTaskForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             task.title = form.cleaned_data["title"]
             task.description = form.cleaned_data["description"]
@@ -1068,7 +1040,7 @@ def edit_general_task(request, task_id):
 @login_required
 @require_POST
 def complete_general_task(request, task_id):
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(visible_records(Task.objects.all(), request.user), id=task_id)
     task.status = "completed"
     task.save()
 
@@ -1080,6 +1052,7 @@ def import_leads(request):
     if request.method == "POST":
         form = ImportLeadsForm(request.POST, request.FILES)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             csv_file = form.cleaned_data["csv_file"]
             decoded_file = csv_file.read().decode("utf-8-sig")
@@ -1133,6 +1106,7 @@ def import_leads(request):
                         next_follow_up_date = None
 
                 person = Person.objects.create(
+                    workspace=single_workspace_for(request.user),
                     first_name=first_name,
                     last_name=last_name,
                     email=email,
@@ -1142,6 +1116,8 @@ def import_leads(request):
                 )
 
                 lead = Lead.objects.create(
+                    workspace=person.workspace,
+                    assigned_agent=request.user,
                     person=person,
                     lead_type=lead_type,
                     source=source,
@@ -1220,6 +1196,7 @@ def add_crm_user(request):
     if request.method == "POST":
         form = CRMUserCreationForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = form.cleaned_data["is_active"]
@@ -1267,6 +1244,7 @@ def edit_crm_user_access(request, user_id):
     if request.method == "POST":
         form = CRMUserAccessForm(request.POST)
 
+        scope_crm_form(form, request.user)
         if form.is_valid():
             user_obj.is_active = form.cleaned_data["is_active"]
 

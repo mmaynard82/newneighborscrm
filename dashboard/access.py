@@ -1,3 +1,4 @@
+from accounts.access import visible_records, require_record_access
 from django.http import Http404
 
 from leads.models import Lead
@@ -66,13 +67,13 @@ def get_allowed_lead_type_choices(user):
 def filter_leads_for_user(queryset, user):
     allowed_keys = get_allowed_lead_type_keys(user)
 
-    return queryset.filter(lead_type__in=allowed_keys)
+    return visible_records(queryset, user).filter(lead_type__in=allowed_keys)
 
 
 def user_can_view_lead(user, lead):
     allowed_keys = get_allowed_lead_type_keys(user)
 
-    return lead.lead_type in allowed_keys
+    return lead.lead_type in allowed_keys and lead.workspace_id is not None and visible_records(Lead.objects.filter(pk=lead.pk), user).exists()
 
 
 def require_lead_access(user, lead):

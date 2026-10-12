@@ -4,6 +4,8 @@ from properties.models import Property
 
 
 class Task(models.Model):
+    workspace = models.ForeignKey("accounts.Workspace", on_delete=models.PROTECT, null=True, blank=True, related_name="tasks")
+    assigned_agent = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_crm_tasks")
     TASK_STATUSES = [
         ("open", "Open"),
         ("in_progress", "In Progress"),

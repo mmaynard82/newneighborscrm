@@ -5,6 +5,10 @@ from properties.models import Property
 
 
 class Lead(models.Model):
+    # Nullable during the transition: existing leads must be assigned before
+    # tenant-scoped views are enabled.
+    workspace = models.ForeignKey("accounts.Workspace", on_delete=models.PROTECT, null=True, blank=True, related_name="leads")
+    assigned_agent = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_crm_leads")
     LEAD_TYPES = [
         ("buyer", "Buyer"),
         ("seller", "Seller"),

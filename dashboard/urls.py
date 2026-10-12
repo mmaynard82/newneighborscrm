@@ -4,11 +4,6 @@ from . import views
 urlpatterns = [
     path("", views.home, name="dashboard_home"),
 
-    path(
-        "setup-admin/<str:token>/",
-        views.setup_admin_user,
-        name="setup_admin_user",
-    ),
 
     path("pipeline/", views.pipeline, name="pipeline"),
     path("search/", views.global_search, name="global_search"),
