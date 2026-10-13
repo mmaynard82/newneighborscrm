@@ -1,8 +1,1 @@
-<!doctype html>
-<html><head><title>Draft Preview</title></head><body>
-<p>Internal test preview only. Not published.</p>
-<h1>{{ page.headline }}</h1>
-<p>{{ page.description|linebreaksbr }}</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">{{ page.button_text }}</button></form>
-<a href="{% url 'landing_pages_list' %}">Back</a>
-</body></html>
+{% extends "landing_pages/crm_base.html" %}{% block title %}Preview Landing Page{% endblock %}{% block content %}<div class="topbar"><h1>Preview: {{ page.title }}</h1><p class="muted">Internal preview. Test submissions create real CRM records.</p><a class="btn secondary" href="{% url 'landing_pages_list' %}">Back to Landing Pages</a></div><div class="card form-card"><h2>{{ page.headline }}</h2><p>{{ page.description|linebreaksbr }}</p><form method="post">{% csrf_token %}{% for field in form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<button type="submit">{{ page.button_text }}</button></form></div>{% endblock %}
