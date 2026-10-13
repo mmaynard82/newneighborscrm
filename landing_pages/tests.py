@@ -229,3 +229,87 @@ class PublicLandingInquiryTests(TestCase):
         self.assertEqual(payload["status"], "draft")
         self.assertIn(self.page.public_form_token, payload["content"])
         self.assertIn("newneighborscrm.onrender.com", payload["content"])
+
+
+class WordPressPublishTests(TestCase):
+    def setUp(self):
+        self.owner = get_user_model().objects.create_user("pubowner", password="example")
+        self.agent = get_user_model().objects.create_user("pubagent", password="example")
+        self.outsider = get_user_model().objects.create_user("puboutside", password="example")
+        self.workspace = Workspace.objects.create(name="Publish workspace", kind="brokerage")
+        self.other = Workspace.objects.create(name="Other publisher", kind="solo")
+        Membership.objects.create(user=self.owner, workspace=self.workspace, role="owner")
+        Membership.objects.create(user=self.agent, workspace=self.workspace, role="agent")
+        Membership.objects.create(user=self.outsider, workspace=self.other, role="owner")
+        self.page = LandingPage.objects.create(
+            workspace=self.workspace, title="Publish example",
+            slug="publish-example", headline="Hello", wordpress_page_id=799,
+        )
+        self.url = reverse("landing_pages_wordpress_publish", args=[self.page.id])
+
+    def test_get_is_confirmation_only(self):
+        from unittest.mock import patch
+        self.client.force_login(self.owner)
+        with patch("landing_pages.views.publish_existing_draft") as publish:
+            self.assertContains(self.client.get(self.url), "Confirm: Publish to WordPress")
+            publish.assert_not_called()
+
+    def test_agent_and_outsider_cannot_publish(self):
+        from unittest.mock import patch
+        with patch("landing_pages.views.publish_existing_draft") as publish:
+            self.client.force_login(self.agent)
+            self.assertEqual(self.client.post(self.url, {"confirm": "publish"}).status_code, 403)
+            self.client.force_login(self.outsider)
+            self.assertEqual(self.client.post(self.url, {"confirm": "publish"}).status_code, 404)
+            publish.assert_not_called()
+
+    def test_post_requires_explicit_confirmation(self):
+        from unittest.mock import patch
+        self.client.force_login(self.owner)
+        with patch("landing_pages.views.publish_existing_draft") as publish:
+            self.assertEqual(self.client.post(self.url, {}).status_code, 400)
+            publish.assert_not_called()
+
+    def test_success_renders_confirmation(self):
+        from unittest.mock import patch
+        self.client.force_login(self.owner)
+        with patch("landing_pages.views.publish_existing_draft") as publish:
+            response = self.client.post(self.url, {"confirm": "publish"})
+            self.assertContains(response, "SUCCESS: WordPress confirmed")
+            publish.assert_called_once_with(self.page)
+
+    def test_wordpress_rejection_does_not_mark_published(self):
+        from unittest.mock import patch
+        self.client.force_login(self.owner)
+        with patch("landing_pages.views.publish_existing_draft", side_effect=RuntimeError("rejected")):
+            response = self.client.post(self.url, {"confirm": "publish"})
+            self.assertContains(response, "FAILED: Publication was not confirmed", status_code=502)
+        self.page.refresh_from_db()
+        self.assertEqual(self.page.status, "draft")
+
+    def test_wordpress_api_confirms_before_local_publish(self):
+        from unittest.mock import patch, MagicMock
+        import os
+        from .wordpress import publish_existing_draft
+        mock_response = MagicMock()
+        mock_response.__enter__.return_value = mock_response
+        mock_response.read.return_value = b'{"status":"publish","id":799,"link":"https://newneighborsinc.com/sample/"}'
+        with patch.dict(os.environ, {"NEWNEIGHBORS_WP_USERNAME": "test", "NEWNEIGHBORS_WP_APP_PASSWORD": "test"}):
+            with patch("landing_pages.wordpress.urlopen", return_value=mock_response) as opened:
+                publish_existing_draft(self.page)
+        request = opened.call_args.args[0]
+        self.assertEqual(request.get_method(), "POST")
+        self.assertIn("rest_route=/wp/v2/pages/799", request.full_url)
+        self.assertIn(b'"status": "publish"', request.data)
+        self.page.refresh_from_db()
+        self.assertEqual(self.page.status, "published")
+
+    def test_draft_sync_cannot_unpublish_live_page(self):
+        from .wordpress import sync_draft
+        from unittest.mock import patch
+        self.page.status = "published"
+        self.page.save(update_fields=["status"])
+        with patch("landing_pages.wordpress.urlopen") as opened:
+            with self.assertRaisesRegex(RuntimeError, "Published pages cannot"):
+                sync_draft(self.page)
+            opened.assert_not_called()
