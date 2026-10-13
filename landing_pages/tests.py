@@ -363,7 +363,7 @@ class AssignedAgentAndStatsTests(TestCase):
             "first_name": "Example", "last_name": "Third", "email": "stats@example.test",
         })
         response = self.client.get(reverse("landing_pages_list"))
-        self.assertContains(response, "1 inquiries")
+        self.assertContains(response, '<td class="stat">1</td>')
         self.assertContains(response, "routed_agent")
 
 
