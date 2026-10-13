@@ -1,6 +1,9 @@
 """WordPress draft integration. No public publishing from this module."""
 import base64
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 import os
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -43,11 +46,18 @@ def sync_draft(page):
     )
     try:
         with urlopen(request, timeout=15) as response:
-            result = json.load(response)
+            content_type = response.headers.get("Content-Type", "")
+            redirected = response.geturl() != url
+            raw = response.read()
+            try:
+                result = json.loads(raw)
+            except (ValueError, UnicodeDecodeError) as exc:
+                logger.warning("WordPress non-JSON response: status=%s content_type=%s bytes=%s redirected=%s", response.status, content_type[:100], len(raw), redirected)
+                raise RuntimeError("WordPress returned a non-JSON response; check REST API and security settings.") from exc
     except (HTTPError, URLError, TimeoutError) as exc:
         raise RuntimeError("WordPress draft sync failed; check API credentials and connectivity.") from exc
 
-    if result.get("status") != "draft" or not isinstance(result.get("id"), int):
+    if not isinstance(result, dict) or result.get("status") != "draft" or not isinstance(result.get("id"), int):
         raise RuntimeError("WordPress did not confirm a draft; CRM metadata was not updated.")
     page.wordpress_page_id = result["id"]
     page.wordpress_url = result.get("link", "")
