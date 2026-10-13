@@ -16,6 +16,8 @@ WORDPRESS_PAGES_API = "https://newneighborsinc.com/?rest_route=/wp/v2/pages"
 
 def sync_draft(page):
     """Save or update a PRIVATE-TO-EDITORS WordPress draft; never publish."""
+    if page.status == "published":
+        raise RuntimeError("Published pages cannot be overwritten by draft sync.")
     username = os.environ.get("NEWNEIGHBORS_WP_USERNAME", "").strip()
     password = os.environ.get("NEWNEIGHBORS_WP_APP_PASSWORD", "").strip()
     if not username or not password:
@@ -58,4 +60,34 @@ def sync_draft(page):
     page.wordpress_page_id = result["id"]
     page.wordpress_url = result.get("link", "")
     page.save(update_fields=["wordpress_page_id", "wordpress_url", "updated_at"])
+    return page
+
+
+def publish_existing_draft(page):
+    """Publish only a previously linked WordPress draft after explicit CRM approval."""
+    if not page.wordpress_page_id:
+        raise RuntimeError("Save a WordPress draft before publishing.")
+    if page.status == "published":
+        raise RuntimeError("This page is already marked as published.")
+    username = os.environ.get("NEWNEIGHBORS_WP_USERNAME", "").strip()
+    password = os.environ.get("NEWNEIGHBORS_WP_APP_PASSWORD", "").strip()
+    if not username or not password:
+        raise ImproperlyConfigured("WordPress application credentials are not configured.")
+    url = WORDPRESS_PAGES_API + "/" + str(page.wordpress_page_id)
+    token = base64.b64encode("{}:{}".format(username, password).encode()).decode()
+    request = Request(
+        url, data=json.dumps({"status": "publish"}).encode("utf-8"), method="POST",
+        headers={"Authorization": "Basic " + token, "Content-Type": "application/json",
+                 "Accept": "application/json"},
+    )
+    try:
+        with urlopen(request, timeout=15) as response:
+            result = json.load(response)
+    except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+        raise RuntimeError("WordPress did not confirm publication.") from exc
+    if not isinstance(result, dict) or result.get("status") != "publish" or result.get("id") != page.wordpress_page_id:
+        raise RuntimeError("WordPress did not confirm publication.")
+    page.status = "published"
+    page.wordpress_url = result.get("link") or page.wordpress_url
+    page.save(update_fields=["status", "wordpress_url", "updated_at"])
     return page

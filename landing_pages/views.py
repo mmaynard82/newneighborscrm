@@ -12,7 +12,7 @@ from accounts.access import single_workspace_for
 from accounts.models import Membership
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ImproperlyConfigured
-from .wordpress import sync_draft
+from .wordpress import sync_draft, publish_existing_draft
 from .forms import LandingPageForm, LandingInquiryForm
 from .intake import create_landing_inquiry
 from .models import LandingPage
@@ -118,3 +118,33 @@ def public_inquiry(request, token):
                 create_landing_inquiry(page, form.cleaned_data)
             return render(request, "landing_pages/received.html")
     return render(request, "landing_pages/public_form.html", {"page": page, "form": form})
+
+
+@login_required
+def publish_wordpress_page(request, page_id):
+    workspace = single_workspace_for(request.user)
+    page = get_object_or_404(LandingPage, pk=page_id, workspace=workspace)
+    if not Membership.objects.filter(
+        workspace=workspace, user=request.user, is_active=True, role__in=["owner", "admin"]
+    ).exists():
+        return HttpResponseForbidden("Only a workspace owner or administrator can publish.")
+    if request.method == "GET":
+        return render(request, "landing_pages/publish_confirm.html", {"page": page})
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    if request.POST.get("confirm") != "publish":
+        return HttpResponse(status=400)
+    try:
+        publish_existing_draft(page)
+    except (RuntimeError, ImproperlyConfigured):
+        return render(request, "landing_pages/publish_result.html", {
+            "ok": False, "page": page,
+            "detail": "WordPress did not confirm publication. Check that the draft exists and the WordPress account can publish pages.",
+        }, status=502)
+    except Exception:
+        logger.exception("Unexpected WordPress publication failure (page_id=%s)", page.id)
+        return render(request, "landing_pages/publish_result.html", {
+            "ok": False, "page": page,
+            "detail": "A server error occurred. Check Render logs before retrying.",
+        }, status=502)
+    return render(request, "landing_pages/publish_result.html", {"ok": True, "page": page})
