@@ -393,3 +393,25 @@ class LandingPageVisualDesignTests(TestCase):
         self.assertContains(response, "NEW NEIGHBORS")
         self.assertContains(response, 'name="email"')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
+
+
+class LandingPageCRMDesignTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("ui_user", password="example")
+        self.workspace = Workspace.objects.create(name="UI workspace", kind="solo")
+        Membership.objects.create(user=self.user, workspace=self.workspace, role="owner")
+        self.client.force_login(self.user)
+
+    def test_landing_list_uses_crm_navigation(self):
+        response = self.client.get(reverse("landing_pages_list"))
+        self.assertContains(response, "CRM Platform")
+        self.assertContains(response, 'href="/pipeline/"')
+        self.assertContains(response, 'href="/landing-pages/"')
+        self.assertContains(response, "Create Landing Page")
+
+    def test_landing_creator_uses_crm_layout_and_preserves_fields(self):
+        response = self.client.get(reverse("landing_pages_create"))
+        self.assertContains(response, "CRM Platform")
+        self.assertContains(response, 'name="headline"')
+        self.assertContains(response, 'name="assigned_agent"')
+        self.assertContains(response, "Save Draft")
