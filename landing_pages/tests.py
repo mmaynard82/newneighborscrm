@@ -120,7 +120,8 @@ class WordPressDraftSyncTests(TestCase):
         self.client.force_login(self.owner)
         with patch("landing_pages.views.sync_draft") as sync:
             response = self.client.post(reverse("landing_pages_wordpress_sync", args=[self.page.id]))
-            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "SUCCESS: WordPress confirmed")
             sync.assert_called_once_with(self.page)
 
     def test_success_message_appears_after_draft_sync(self):
@@ -132,7 +133,7 @@ class WordPressDraftSyncTests(TestCase):
         self.client.force_login(user)
         with patch("landing_pages.views.sync_draft"):
             response = self.client.post(reverse("landing_pages_wordpress_sync", args=[page.id]), follow=True)
-        self.assertContains(response, "WordPress draft saved.")
+        self.assertContains(response, "SUCCESS: WordPress confirmed")
 
     def test_failure_message_appears_after_draft_sync(self):
         from unittest.mock import patch
@@ -143,4 +144,4 @@ class WordPressDraftSyncTests(TestCase):
         self.client.force_login(user)
         with patch("landing_pages.views.sync_draft", side_effect=RuntimeError("Simulated failure")):
             response = self.client.post(reverse("landing_pages_wordpress_sync", args=[page.id]), follow=True)
-        self.assertContains(response, "WordPress draft sync failed.")
+        self.assertContains(response, "FAILED: WordPress did not confirm the draft.", status_code=502)
