@@ -365,3 +365,31 @@ class AssignedAgentAndStatsTests(TestCase):
         response = self.client.get(reverse("landing_pages_list"))
         self.assertContains(response, "1 inquiries")
         self.assertContains(response, "routed_agent")
+
+
+class LandingPageVisualDesignTests(TestCase):
+    def test_wordpress_content_uses_theme_blocks_and_escapes_editor_input(self):
+        from .design import render_wordpress_content
+        workspace = Workspace.objects.create(name="Styling", kind="solo")
+        page = LandingPage.objects.create(
+            workspace=workspace, title="Test", slug="styled",
+            headline="<script>alert(1)</script>", description="Helping owners",
+            template="valuation", button_text="Get started",
+        )
+        content = render_wordpress_content(page, "https://example.test/inquiry/?a=1&b=2")
+        self.assertIn("wp:group", content)
+        self.assertIn("wp:columns", content)
+        self.assertIn("wp:button", content)
+        self.assertIn("&lt;script&gt;", content)
+        self.assertNotIn("<script>", content)
+        self.assertIn("a=1&amp;b=2", content)
+
+    def test_public_form_contains_branding_and_valid_fields(self):
+        workspace = Workspace.objects.create(name="Public styling", kind="solo")
+        page = LandingPage.objects.create(
+            workspace=workspace, title="Public test", slug="public-style", headline="Let's talk",
+        )
+        response = self.client.get(reverse("landing_pages_public_inquiry", args=[page.public_form_token]))
+        self.assertContains(response, "NEW NEIGHBORS")
+        self.assertContains(response, 'name="email"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')

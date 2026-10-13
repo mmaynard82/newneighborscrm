@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse
 from django.conf import settings
-from django.utils.html import escape
+from .design import render_wordpress_content
 
 
 WORDPRESS_PAGES_API = "https://newneighborsinc.com/?rest_route=/wp/v2/pages"
@@ -27,10 +27,7 @@ def sync_draft(page):
     form_url = settings.CRM_PUBLIC_BASE_URL.rstrip("/") + reverse(
         "landing_pages_public_inquiry", kwargs={"token": page.public_form_token}
     )
-    content = '<h1>{}</h1><p>{}</p><p><a href="{}">{}</a></p>'.format(
-        escape(page.headline), escape(page.description).replace("\\n", "<br>"),
-        escape(form_url), escape(page.button_text),
-    )
+    content = render_wordpress_content(page, form_url)
     payload = json.dumps({
         "title": page.title,
         "slug": page.slug,
