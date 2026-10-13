@@ -4,6 +4,10 @@ import logging
 logger = logging.getLogger(__name__)
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.cache import never_cache
+from django.core.cache import cache
+from django.http import HttpResponse
+import hashlib
 from accounts.access import single_workspace_for
 from accounts.models import Membership
 from django.views.decorators.http import require_POST
@@ -86,3 +90,31 @@ def sync_wordpress_page(request, page_id):
     return render(request, "landing_pages/sync_result.html", {
         "ok": True, "page": page,
     })
+
+
+@never_cache
+def public_inquiry(request, token):
+    """Public contact form linked from a WordPress draft; never reveals tenant details."""
+    page = get_object_or_404(LandingPage, public_form_token=token)
+    if request.method not in ("GET", "POST"):
+        return HttpResponse(status=405)
+    form = LandingInquiryForm(request.POST or None)
+    if request.method == "POST":
+        # Limit per form and client address; cache may be per-process on basic Render.
+        address = request.META.get("REMOTE_ADDR", "")
+        fingerprint = hashlib.sha256((token + "|" + address).encode()).hexdigest()
+        key = "landing_form_hits:" + fingerprint
+        if cache.get(key, 0) >= 5:
+            return render(request, "landing_pages/public_form.html", {
+                "page": page, "form": form, "limited": True,
+            }, status=429)
+        if form.is_valid():
+            cache.add(key, 0, timeout=3600)
+            try:
+                cache.incr(key)
+            except ValueError:
+                cache.set(key, 1, timeout=3600)
+            if not form.cleaned_data.get("website"):
+                create_landing_inquiry(page, form.cleaned_data)
+            return render(request, "landing_pages/received.html")
+    return render(request, "landing_pages/public_form.html", {"page": page, "form": form})
