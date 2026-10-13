@@ -1,0 +1,17 @@
+<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ page.title }}</title></head>
+<body><main style="max-width:600px;margin:3rem auto;font-family:system-ui,sans-serif;padding:1rem">
+<h1>{{ page.headline }}</h1><p>{{ page.description }}</p>
+{% if limited %}<p role="alert">Too many requests. Please try again later.</p>{% else %}
+<form method="post">{% csrf_token %}
+{{ form.non_field_errors }}
+<p><label for="{{ form.first_name.id_for_label }}">First name</label> {{ form.first_name }} {{ form.first_name.errors }}</p>
+<p><label for="{{ form.last_name.id_for_label }}">Last name</label> {{ form.last_name }} {{ form.last_name.errors }}</p>
+<p><label for="{{ form.email.id_for_label }}">Email</label> {{ form.email }} {{ form.email.errors }}</p>
+<p><label for="{{ form.phone.id_for_label }}">Phone (optional)</label> {{ form.phone }} {{ form.phone.errors }}</p>
+<p><label for="{{ form.message.id_for_label }}">Message (optional)</label> {{ form.message }} {{ form.message.errors }}</p>
+{{ form.website }}
+<p style="font-size:.85rem">Submitting this form shares your details with New Neighbors for follow-up. It does not subscribe you to marketing emails or text messages.</p>
+<button type="submit">{{ page.button_text }}</button>
+</form>{% endif %}
+</main></body></html>
