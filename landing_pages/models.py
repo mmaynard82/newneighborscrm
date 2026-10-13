@@ -1,4 +1,9 @@
+import secrets
 from django.db import models
+
+
+def new_form_token():
+    return secrets.token_urlsafe(32)
 
 
 class LandingPage(models.Model):
@@ -17,6 +22,7 @@ class LandingPage(models.Model):
     headline = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     button_text = models.CharField(max_length=80, default="Contact Us")
+    public_form_token = models.CharField(max_length=64, unique=True, default=new_form_token, editable=False)
     wordpress_page_id = models.PositiveBigIntegerField(null=True, blank=True)
     wordpress_url = models.URLField(blank=True)
     status = models.CharField(max_length=20, choices=[("draft", "Draft"), ("published", "Published")], default="draft")

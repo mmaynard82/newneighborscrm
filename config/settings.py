@@ -11,6 +11,7 @@ if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is required")
 
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+CRM_PUBLIC_BASE_URL = os.environ.get("CRM_PUBLIC_BASE_URL", "https://newneighborscrm.onrender.com")
 
 
 ALLOWED_HOSTS = os.environ.get(

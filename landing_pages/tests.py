@@ -173,3 +173,59 @@ class WordPressDraftSyncTests(TestCase):
         request = opened.call_args.args[0]
         self.assertEqual(request.full_url, "https://newneighborsinc.com/?rest_route=/wp/v2/pages/123")
         self.assertEqual(request.get_method(), "POST")
+
+
+class PublicLandingInquiryTests(TestCase):
+    def setUp(self):
+        self.workspace = Workspace.objects.create(name="Public workspace", kind="solo")
+        self.other = Workspace.objects.create(name="Other workspace", kind="solo")
+        self.page = LandingPage.objects.create(
+            workspace=self.workspace, title="Valuation", slug="public-valuation",
+            headline="How much?", template="valuation",
+        )
+        self.url = reverse("landing_pages_public_inquiry", args=[self.page.public_form_token])
+        self.payload = {
+            "first_name": "Pat", "last_name": "Buyer",
+            "email": "pat@example.test", "phone": "5551230000",
+        }
+
+    def test_public_form_requires_no_login(self):
+        self.assertEqual(self.client.get(self.url).status_code, 200)
+        self.assertEqual(self.client.get("/landing-pages/inquiry/not-a-token/").status_code, 404)
+
+    def test_submission_creates_correct_workspace_records(self):
+        from leads.models import Lead
+        from tasks.models import Task
+        self.assertEqual(self.client.post(self.url, self.payload).status_code, 200)
+        lead = Lead.objects.get(source="landing_page:" + str(self.page.pk))
+        self.assertEqual(lead.workspace_id, self.workspace.pk)
+        self.assertEqual(lead.person.workspace_id, self.workspace.pk)
+        self.assertEqual(Task.objects.filter(workspace=self.workspace, related_person=lead.person).count(), 1)
+        self.assertFalse(Lead.objects.filter(workspace=self.other).exists())
+
+    def test_honeypot_does_not_create_leads(self):
+        from leads.models import Lead
+        self.assertEqual(self.client.post(self.url, dict(self.payload, website="spam.example")).status_code, 200)
+        self.assertFalse(Lead.objects.exists())
+
+    def test_invalid_form_does_not_create_leads(self):
+        from leads.models import Lead
+        response = self.client.post(self.url, dict(self.payload, email="not-an-email"))
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Lead.objects.exists())
+
+    def test_wordpress_draft_includes_public_form_link(self):
+        import os
+        import json
+        from unittest.mock import patch, MagicMock
+        from .wordpress import sync_draft
+        fake = MagicMock()
+        fake.__enter__.return_value = fake
+        fake.read.return_value = b'{"id":55,"status":"draft","link":"https://newneighborsinc.com/?page_id=55"}'
+        with patch.dict(os.environ, {"NEWNEIGHBORS_WP_USERNAME": "test", "NEWNEIGHBORS_WP_APP_PASSWORD": "test"}):
+            with patch("landing_pages.wordpress.urlopen", return_value=fake) as opened:
+                sync_draft(self.page)
+        payload = json.loads(opened.call_args.args[0].data)
+        self.assertEqual(payload["status"], "draft")
+        self.assertIn(self.page.public_form_token, payload["content"])
+        self.assertIn("newneighborscrm.onrender.com", payload["content"])

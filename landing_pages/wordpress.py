@@ -6,6 +6,9 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from django.core.exceptions import ImproperlyConfigured
+from django.urls import reverse
+from django.conf import settings
+from django.utils.html import escape
 
 
 WORDPRESS_PAGES_API = "https://newneighborsinc.com/?rest_route=/wp/v2/pages"
@@ -19,9 +22,12 @@ def sync_draft(page):
         raise ImproperlyConfigured("WordPress application credentials are not configured.")
 
     # Escaped text avoids storing executable HTML supplied via the CRM editor.
-    from django.utils.html import escape
-    content = "<h1>{}</h1><p>{}</p>".format(
-        escape(page.headline), escape(page.description).replace("\n", "<br>"),
+    form_url = settings.CRM_PUBLIC_BASE_URL.rstrip("/") + reverse(
+        "landing_pages_public_inquiry", kwargs={"token": page.public_form_token}
+    )
+    content = '<h1>{}</h1><p>{}</p><p><a href="{}">{}</a></p>'.format(
+        escape(page.headline), escape(page.description).replace("\\n", "<br>"),
+        escape(form_url), escape(page.button_text),
     )
     payload = json.dumps({
         "title": page.title,
