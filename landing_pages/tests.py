@@ -145,3 +145,12 @@ class WordPressDraftSyncTests(TestCase):
         with patch("landing_pages.views.sync_draft", side_effect=RuntimeError("Simulated failure")):
             response = self.client.post(reverse("landing_pages_wordpress_sync", args=[page.id]), follow=True)
         self.assertContains(response, "FAILED: WordPress did not confirm the draft.", status_code=502)
+
+    def test_unexpected_wordpress_exception_shows_safe_failure(self):
+        from unittest.mock import patch
+        self.client.force_login(self.owner)
+        with patch("landing_pages.views.sync_draft", side_effect=ValueError("invalid remote JSON")):
+            response = self.client.post(reverse("landing_pages_wordpress_sync", args=[self.page.id]))
+        self.assertContains(response, "FAILED: WordPress did not confirm the draft.", status_code=502)
+        self.assertContains(response, "An unexpected server error occurred.", status_code=502)
+        self.assertNotContains(response, "invalid remote JSON", status_code=502)
