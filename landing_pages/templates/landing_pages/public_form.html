@@ -1,17 +1,40 @@
 <!doctype html>
-<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ page.title }}</title></head>
-<body><main style="max-width:600px;margin:3rem auto;font-family:system-ui,sans-serif;padding:1rem">
-<h1>{{ page.headline }}</h1><p>{{ page.description }}</p>
-{% if limited %}<p role="alert">Too many requests. Please try again later.</p>{% else %}
-<form method="post">{% csrf_token %}
-{{ form.non_field_errors }}
-<p><label for="{{ form.first_name.id_for_label }}">First name</label> {{ form.first_name }} {{ form.first_name.errors }}</p>
-<p><label for="{{ form.last_name.id_for_label }}">Last name</label> {{ form.last_name }} {{ form.last_name.errors }}</p>
-<p><label for="{{ form.email.id_for_label }}">Email</label> {{ form.email }} {{ form.email.errors }}</p>
-<p><label for="{{ form.phone.id_for_label }}">Phone (optional)</label> {{ form.phone }} {{ form.phone.errors }}</p>
-<p><label for="{{ form.message.id_for_label }}">Message (optional)</label> {{ form.message }} {{ form.message.errors }}</p>
-{{ form.website }}
-<p style="font-size:.85rem">Submitting this form shares your details with New Neighbors for follow-up. It does not subscribe you to marketing emails or text messages.</p>
-<button type="submit">{{ page.button_text }}</button>
-</form>{% endif %}
-</main></body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title }} | New Neighbors</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#23332e;background:#f7f7f2}
+*{box-sizing:border-box}body{margin:0;line-height:1.55}
+header{background:white;border-bottom:1px solid #e4e9e3;padding:16px max(22px,calc((100% - 1060px)/2));display:flex;justify-content:space-between;align-items:center;gap:20px}
+.brand{color:#1e5047;font-weight:800;text-decoration:none;letter-spacing:.04em;font-size:1.05rem}
+header span{font-size:.78rem;color:#66736c}
+main{max-width:960px;padding:64px 22px 80px;margin:auto;display:grid;grid-template-columns:1fr 1.1fr;gap:54px;align-items:start}
+h1{font-size:clamp(2rem,4.5vw,3.5rem);line-height:1.1;letter-spacing:-.035em;color:#183b34;margin:12px 0 24px}
+.eyebrow{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;font-weight:750;color:#44766b}
+.intro{font-size:1.1rem;color:#55635c}
+.card{background:white;border:1px solid #e0e6df;border-radius:18px;padding:32px;box-shadow:0 18px 50px rgba(21,46,37,.07)}
+h2{color:#193d34;margin:0 0 8px;font-size:1.4rem}.helper{color:#64736a;margin:0 0 22px;font-size:.93rem}
+label{font-weight:600;font-size:.9rem;display:block;margin-bottom:5px}
+input:not([type=hidden]),textarea{width:100%;font:inherit;color:#24352d;padding:11px 12px;border:1px solid #aebdb5;border-radius:8px;background:#fff}
+input:focus,textarea:focus{outline:3px solid #beded3;border-color:#2c7161}
+.field{margin:0 0 15px}.errors,.errorlist{color:#a52121}
+button{width:100%;font:inherit;font-weight:700;background:#23584c;color:white;border:0;border-radius:8px;padding:14px;cursor:pointer}
+button:hover{background:#173f36}.legal{font-size:.78rem;color:#606b63;margin-top:18px}
+footer{border-top:1px solid #e0e6df;text-align:center;padding:28px;color:#657369;font-size:.85rem}
+@media(max-width:700px){main{grid-template-columns:1fr;padding-top:32px;gap:20px}.card{padding:22px}}
+</style></head>
+<body>
+<header><a class="brand" href="https://newneighborsinc.com/">NEW NEIGHBORS</a><span>Serving Connecticut &amp; Massachusetts</span></header>
+<main><section><div class="eyebrow">A more personal approach to property support</div><h1>{{ page.headline }}</h1><p class="intro">{{ page.description|linebreaksbr }}</p><p class="intro">Tell us a little about your situation. Our team will follow up to discuss the next step.</p></section>
+<section class="card"><h2>Start the conversation</h2><p class="helper">Complete the form below to connect with New Neighbors.</p>
+{% if limited %}<p role="alert" class="errors">Too many requests. Please try again later.</p>{% else %}
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}
+<div class="field"><label for="{{ form.first_name.id_for_label }}">First name</label>{{ form.first_name }}{{ form.first_name.errors }}</div>
+<div class="field"><label for="{{ form.last_name.id_for_label }}">Last name</label>{{ form.last_name }}{{ form.last_name.errors }}</div>
+<div class="field"><label for="{{ form.email.id_for_label }}">Email address</label>{{ form.email }}{{ form.email.errors }}</div>
+<div class="field"><label for="{{ form.phone.id_for_label }}">Phone (optional)</label>{{ form.phone }}{{ form.phone.errors }}</div>
+<div class="field"><label for="{{ form.message.id_for_label }}">How can we help? (optional)</label>{{ form.message }}{{ form.message.errors }}</div>
+{{ form.website }}<button type="submit">{{ page.button_text }}</button>
+<p class="legal">By submitting, you agree that New Neighbors may contact you about this request. Submitting does not subscribe you to marketing emails or text messages.</p></form>{% endif %}
+</section></main>
+<footer>New Neighbors · Connecticut &amp; Massachusetts · (203) 464-1168</footer>
+</body></html>
