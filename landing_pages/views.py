@@ -64,8 +64,17 @@ def sync_wordpress_page(request, page_id):
         return HttpResponseForbidden("Only a workspace owner or administrator can sync WordPress drafts.")
     try:
         sync_draft(page)
-    except (RuntimeError, ImproperlyConfigured):
-        messages.error(request, "WordPress draft sync failed. Check the integration credentials and WordPress permissions.")
-    else:
-        messages.success(request, "WordPress draft saved. It is not publicly published.")
-    return redirect("landing_pages_list")
+    except (RuntimeError, ImproperlyConfigured) as exc:
+        cause = exc.__cause__
+        status_code = getattr(cause, "code", None)
+        detail = {
+            401: "WordPress rejected the credentials. Check the username and Application Password.",
+            403: "WordPress denied page editing permission or blocked the API request.",
+            404: "The WordPress Pages API endpoint was not found.",
+        }.get(status_code, "Check Render credentials and WordPress REST API access.")
+        return render(request, "landing_pages/sync_result.html", {
+            "ok": False, "page": page, "detail": detail,
+        }, status=502)
+    return render(request, "landing_pages/sync_result.html", {
+        "ok": True, "page": page,
+    })
