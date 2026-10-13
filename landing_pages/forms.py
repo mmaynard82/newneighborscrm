@@ -15,3 +15,5 @@ class LandingInquiryForm(forms.Form):
     email = forms.EmailField()
     phone = forms.CharField(max_length=50, required=False)
     message = forms.CharField(max_length=2000, required=False, widget=forms.Textarea)
+
+    website = forms.CharField(max_length=200, required=False, widget=forms.HiddenInput)
