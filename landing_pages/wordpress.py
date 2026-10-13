@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 from django.core.exceptions import ImproperlyConfigured
 
 
-WORDPRESS_PAGES_API = "https://newneighborsinc.com/wp-json/wp/v2/pages"
+WORDPRESS_PAGES_API = "https://newneighborsinc.com/?rest_route=/wp/v2/pages"
 
 
 def sync_draft(page):
