@@ -1,8 +1,6 @@
-<!doctype html>
-<html><head><title>Draft Preview</title></head><body>
-<p>Internal test preview only. Not published.</p>
-<h1>{{ page.headline }}</h1>
-<p>{{ page.description|linebreaksbr }}</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">{{ page.button_text }}</button></form>
-<a href="{% url 'landing_pages_list' %}">Back</a>
-</body></html>
+{% extends "landing_pages/base.html" %}{% block title %}Preview Landing Page{% endblock %}{% block content %}
+<div class="topbar lp-page-title"><div><h2>Preview: {{ page.title }}</h2><p>Internal CRM preview and test inquiry. This does not publish your page.</p></div><a class="btn btn-secondary" href="{% url 'landing_pages_list' %}">Back to Landing Pages</a></div>
+<div class="lp-panel"><div class="lp-hero"><h1>{{ page.headline }}</h1><p>{{ page.description|linebreaksbr }}</p></div></div>
+<div class="lp-panel"><h3 style="color:var(--primary)">Test the Inquiry Form</h3><p class="lp-muted">Submitting this form creates a real contact, lead and follow-up task in your workspace for testing.</p>
+<form method="post">{% csrf_token %}{% if form.non_field_errors %}<div class="lp-errors">{{ form.non_field_errors }}</div>{% endif %}<div class="lp-fields">{% for field in form %}<div class="lp-field {% if field.name == 'message' %}lp-field-wide{% endif %}">{% if not field.is_hidden %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{% endif %}{{ field }}<div class="lp-errors">{{ field.errors }}</div></div>{% endfor %}</div><button class="btn btn-primary" type="submit" style="margin-top:20px">{{ page.button_text }}</button></form></div>
+{% endblock %}
