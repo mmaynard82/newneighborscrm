@@ -154,3 +154,22 @@ class WordPressDraftSyncTests(TestCase):
         self.assertContains(response, "FAILED: WordPress did not confirm the draft.", status_code=502)
         self.assertContains(response, "An unexpected server error occurred.", status_code=502)
         self.assertNotContains(response, "invalid remote JSON", status_code=502)
+
+    def test_wordpress_draft_endpoint_uses_query_rest_route(self):
+        from .wordpress import WORDPRESS_PAGES_API
+        self.assertEqual(WORDPRESS_PAGES_API, "https://newneighborsinc.com/?rest_route=/wp/v2/pages")
+
+    def test_wordpress_update_uses_query_rest_route_with_page_id(self):
+        import os
+        from unittest.mock import patch, MagicMock
+        from .wordpress import sync_draft
+        self.page.wordpress_page_id = 123
+        fake = MagicMock()
+        fake.__enter__.return_value = fake
+        fake.read.return_value = b'{"id":123,"status":"draft","link":"https://newneighborsinc.com/?page_id=123"}'
+        with patch.dict(os.environ, {"NEWNEIGHBORS_WP_USERNAME": "test", "NEWNEIGHBORS_WP_APP_PASSWORD": "test"}):
+            with patch("landing_pages.wordpress.urlopen", return_value=fake) as opened:
+                sync_draft(self.page)
+        request = opened.call_args.args[0]
+        self.assertEqual(request.full_url, "https://newneighborsinc.com/?rest_route=/wp/v2/pages/123")
+        self.assertEqual(request.get_method(), "POST")
