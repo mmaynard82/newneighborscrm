@@ -1,1 +1,10 @@
-<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Landing Page | New Neighbors CRM</title></head><body><main><h1>{% if page %}Edit{% else %}Create{% endif %} Landing Page</h1><p>Draft only: no WordPress publishing or live lead capture yet.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button type="submit">Save Draft</button></form><p><a href="{% url 'landing_pages_list' %}">Back to Landing Pages</a></p></main></body></html>
+{% extends "landing_pages/base.html" %}{% block title %}{% if page %}Edit{% else %}Create{% endif %} Landing Page{% endblock %}{% block content %}
+<div class="topbar lp-page-title"><div><h2>{% if page %}Edit Landing Page{% else %}Create Landing Page{% endif %}</h2><p>Choose a template, add your messaging, and route inquiries to an agent.</p></div><a href="{% url 'landing_pages_list' %}" class="btn btn-secondary">Back to Landing Pages</a></div>
+<form method="post" class="lp-panel">{% csrf_token %}
+{% if form.non_field_errors %}<div class="lp-errors">{{ form.non_field_errors }}</div>{% endif %}
+<h3 style="color:var(--primary);margin-top:0">Page Details</h3>
+<div class="lp-fields">
+{% for field in form %}<div class="lp-field {% if field.name == 'description' %}lp-field-wide{% endif %}"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<p class="lp-muted">{{ field.help_text }}</p>{% endif %}{% if field.errors %}<div class="lp-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}
+</div><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:26px"><button type="submit" class="btn btn-primary">Save Landing Page</button><a href="{% url 'landing_pages_list' %}" class="btn btn-secondary">Cancel</a>{% if page %}<a href="{% url 'landing_pages_preview' page.id %}" class="btn btn-secondary">Preview</a>{% endif %}</div>
+<p class="lp-muted">Saving changes updates your CRM draft. For unpublished pages, use Save WordPress Draft from the Landing Pages list to sync the changes to WordPress.</p></form>
+{% endblock %}
