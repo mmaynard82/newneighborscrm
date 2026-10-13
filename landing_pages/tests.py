@@ -313,3 +313,55 @@ class WordPressPublishTests(TestCase):
             with self.assertRaisesRegex(RuntimeError, "Published pages cannot"):
                 sync_draft(self.page)
             opened.assert_not_called()
+
+
+class AssignedAgentAndStatsTests(TestCase):
+    def setUp(self):
+        self.owner = get_user_model().objects.create_user("agent_owner", password="example")
+        self.agent = get_user_model().objects.create_user("routed_agent", password="example")
+        self.outside = get_user_model().objects.create_user("outside_agent", password="example")
+        self.workspace = Workspace.objects.create(name="Agent routing", kind="brokerage")
+        self.other = Workspace.objects.create(name="Other agent routing", kind="solo")
+        Membership.objects.create(user=self.owner, workspace=self.workspace, role="owner")
+        Membership.objects.create(user=self.agent, workspace=self.workspace, role="agent")
+        Membership.objects.create(user=self.outside, workspace=self.other, role="agent")
+        self.page = LandingPage.objects.create(workspace=self.workspace, title="Agent page", slug="agent-page", headline="Agent", assigned_agent=self.agent)
+        self.client.force_login(self.owner)
+
+    def test_form_cannot_assign_agent_from_another_workspace(self):
+        response = self.client.post(reverse("landing_pages_edit", args=[self.page.pk]), {
+            "title": "Agent page", "slug": "agent-page", "template": "custom",
+            "headline": "Agent", "description": "", "button_text": "Contact Us",
+            "assigned_agent": self.outside.pk,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("assigned_agent", response.context["form"].errors)
+        self.page.refresh_from_db()
+        self.assertEqual(self.page.assigned_agent, self.agent)
+
+    def test_public_inquiry_assigns_lead_and_task(self):
+        from leads.models import Lead
+        from tasks.models import Task
+        response = self.client.post(reverse("landing_pages_public_inquiry", args=[self.page.public_form_token]), {
+            "first_name": "Example", "last_name": "Customer", "email": "assigned@example.test",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Lead.objects.get(source="landing_page:" + str(self.page.id)).assigned_agent, self.agent)
+        self.assertEqual(Task.objects.get(title="Follow up: Agent page").assigned_agent, self.agent)
+
+    def test_inactive_agent_receives_no_assignment(self):
+        from leads.models import Lead
+        Membership.objects.filter(user=self.agent, workspace=self.workspace).update(is_active=False)
+        self.client.post(reverse("landing_pages_public_inquiry", args=[self.page.public_form_token]), {
+            "first_name": "Example", "last_name": "Second", "email": "inactive@example.test",
+        })
+        self.assertIsNone(Lead.objects.get(source="landing_page:" + str(self.page.id)).assigned_agent)
+
+    def test_list_shows_per_page_submission_count(self):
+        from leads.models import Lead
+        self.client.post(reverse("landing_pages_public_inquiry", args=[self.page.public_form_token]), {
+            "first_name": "Example", "last_name": "Third", "email": "stats@example.test",
+        })
+        response = self.client.get(reverse("landing_pages_list"))
+        self.assertContains(response, "1 inquiries")
+        self.assertContains(response, "routed_agent")
