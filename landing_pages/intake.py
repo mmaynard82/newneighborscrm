@@ -3,6 +3,7 @@ from django.db import transaction
 from people.models import Person
 from leads.models import Lead
 from tasks.models import Task
+from accounts.models import Membership
 
 TEMPLATE_TO_LEAD_TYPE = {
     "valuation": "seller",
@@ -26,9 +27,11 @@ def create_landing_inquiry(page, cleaned):
             phone=cleaned.get("phone", ""), person_type="lead",
             email_opt_in=False, sms_opt_in=False,
         )
+    assigned_agent = page.assigned_agent if page.assigned_agent_id and Membership.objects.filter(workspace=page.workspace, user_id=page.assigned_agent_id, is_active=True, user__is_active=True).exists() else None
     lead = Lead.objects.create(
         workspace=page.workspace,
         person=person,
+        assigned_agent=assigned_agent,
         lead_type=TEMPLATE_TO_LEAD_TYPE[page.template],
         status="new",
         source="landing_page:" + str(page.pk),
@@ -38,6 +41,7 @@ def create_landing_inquiry(page, cleaned):
     Task.objects.create(
         workspace=page.workspace,
         related_person=person,
+        assigned_agent=assigned_agent,
         title="Follow up: " + page.title,
         priority="high",
         description="New landing page inquiry, lead #" + str(lead.pk),
