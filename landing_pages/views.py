@@ -1,5 +1,7 @@
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+import logging
+
+logger = logging.getLogger(__name__)
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from accounts.access import single_workspace_for
@@ -74,6 +76,12 @@ def sync_wordpress_page(request, page_id):
         }.get(status_code, "Check Render credentials and WordPress REST API access.")
         return render(request, "landing_pages/sync_result.html", {
             "ok": False, "page": page, "detail": detail,
+        }, status=502)
+    except Exception:
+        logger.exception("Unexpected WordPress draft sync failure (page_id=%s)", page.id)
+        return render(request, "landing_pages/sync_result.html", {
+            "ok": False, "page": page,
+            "detail": "An unexpected server error occurred. Check Render logs for the WordPress draft sync traceback.",
         }, status=502)
     return render(request, "landing_pages/sync_result.html", {
         "ok": True, "page": page,
