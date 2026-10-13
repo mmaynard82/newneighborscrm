@@ -16,13 +16,24 @@ from .wordpress import sync_draft, publish_existing_draft
 from .forms import LandingPageForm, LandingInquiryForm
 from .intake import create_landing_inquiry
 from .models import LandingPage
+from leads.models import Lead
+from django.db.models import Count
 
 
 @login_required
 def list_pages(request):
     workspace = single_workspace_for(request.user)
+    pages = list(LandingPage.objects.filter(workspace=workspace).select_related("assigned_agent").order_by("-updated_at"))
+    counts = dict(
+        Lead.objects.filter(
+            workspace=workspace,
+            source__in=["landing_page:" + str(page.id) for page in pages],
+        ).values("source").annotate(count=Count("id")).values_list("source", "count")
+    )
+    for page in pages:
+        page.inquiry_count = counts.get("landing_page:" + str(page.id), 0)
     return render(request, "landing_pages/list.html", {
-        "pages": LandingPage.objects.filter(workspace=workspace).order_by("-updated_at"),
+        "pages": pages,
         "can_sync_wordpress": Membership.objects.filter(workspace=workspace, user=request.user, is_active=True, role__in=["owner", "admin"]).exists(),
     })
 
@@ -30,7 +41,7 @@ def list_pages(request):
 @login_required
 def create_page(request):
     workspace = single_workspace_for(request.user)
-    form = LandingPageForm(request.POST or None)
+    form = LandingPageForm(request.POST or None, workspace=workspace)
     if request.method == "POST" and form.is_valid():
         page = form.save(commit=False)
         page.workspace = workspace
@@ -43,7 +54,7 @@ def create_page(request):
 def edit_page(request, page_id):
     workspace = single_workspace_for(request.user)
     page = get_object_or_404(LandingPage, pk=page_id, workspace=workspace)
-    form = LandingPageForm(request.POST or None, instance=page)
+    form = LandingPageForm(request.POST or None, instance=page, workspace=workspace)
     if request.method == "POST" and form.is_valid():
         form.save()
         return redirect("landing_pages_list")

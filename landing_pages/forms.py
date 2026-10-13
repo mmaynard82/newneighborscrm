@@ -1,11 +1,24 @@
 from django import forms
 from .models import LandingPage
+from accounts.models import Membership
+from django.contrib.auth import get_user_model
 
 
 class LandingPageForm(forms.ModelForm):
+    def __init__(self, *args, workspace=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        allowed = Membership.objects.filter(
+            workspace=workspace, is_active=True, user__is_active=True
+        ).values_list("user_id", flat=True) if workspace else []
+        self.fields["assigned_agent"].queryset = get_user_model().objects.filter(
+            pk__in=allowed
+        ).order_by("username")
+        self.fields["assigned_agent"].required = False
+        self.fields["assigned_agent"].label = "Route new inquiries to"
+
     class Meta:
         model = LandingPage
-        fields = ["title", "slug", "template", "headline", "description", "button_text"]
+        fields = ["title", "slug", "template", "headline", "description", "button_text", "assigned_agent"]
         widgets = {"description": forms.Textarea(attrs={"rows": 4})}
 
 
