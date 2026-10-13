@@ -1,15 +1,1 @@
-<!doctype html>
-<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>WordPress Draft Sync Result</title></head>
-<body><main>
-<h1>WordPress Draft Sync Result</h1>
-<p><strong>{{ page.title }}</strong></p>
-{% if ok %}
-<p role="status">SUCCESS: WordPress confirmed that your page was saved as a draft (not publicly published).</p>
-<p>WordPress page ID: {{ page.wordpress_page_id }}</p>
-{% if page.wordpress_url %}<p><a href="{{ page.wordpress_url }}">View WordPress draft link</a> (requires appropriate WordPress access)</p>{% endif %}
-{% else %}
-<p role="alert">FAILED: WordPress did not confirm the draft. No CRM publication status was changed.</p>
-<p>{{ detail }}</p>
-{% endif %}
-<p><a href="{% url 'landing_pages_list' %}">Return to Landing Pages</a></p>
-</main></body></html>
+{% extends "landing_pages/base.html" %}{% block title %}WordPress Draft Sync{% endblock %}{% block content %}<div class="topbar"><div><h2>WordPress Draft Sync</h2><p>{{ page.title }}</p></div></div><div class="lp-panel">{% if ok %}<h3 role="status">WordPress draft saved</h3><p>WordPress confirmed this page was saved as a draft. It is not publicly published.</p><p>WordPress page ID: {{ page.wordpress_page_id }}</p>{% else %}<h3 role="alert">WordPress draft sync failed</h3><p>{{ detail }}</p>{% endif %}<a class="btn btn-primary" href="{% url 'landing_pages_list' %}">Back to Landing Pages</a></div>{% endblock %}
