@@ -154,3 +154,19 @@ class WordPressDraftSyncTests(TestCase):
         self.assertContains(response, "FAILED: WordPress did not confirm the draft.", status_code=502)
         self.assertContains(response, "An unexpected server error occurred.", status_code=502)
         self.assertNotContains(response, "invalid remote JSON", status_code=502)
+
+    def test_non_json_wordpress_response_is_handled(self):
+        from unittest.mock import patch
+        from .wordpress import sync_draft
+        from unittest.mock import MagicMock
+        import os
+        fake_response = MagicMock()
+        fake_response.headers.get.return_value = "text/html"
+        fake_response.geturl.return_value = "https://newneighborsinc.com/wp-json/wp/v2/pages"
+        fake_response.status = 200
+        fake_response.read.return_value = b"<html>Not an API response</html>"
+        fake_response.__enter__.return_value = fake_response
+        with patch.dict(os.environ, {"NEWNEIGHBORS_WP_USERNAME": "test", "NEWNEIGHBORS_WP_APP_PASSWORD": "test"}):
+            with patch("landing_pages.wordpress.urlopen", return_value=fake_response):
+                with self.assertRaisesRegex(RuntimeError, "non-JSON response"):
+                    sync_draft(self.page)
