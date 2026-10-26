@@ -43,6 +43,16 @@ def create_transaction(request):
     return render(request, "ai_workflows/create.html", {"form": form})
 
 @login_required
+def edit_transaction(request, case_id):
+    workspace = single_workspace_for(request.user)
+    item = get_object_or_404(TransactionCase, pk=case_id, workspace=workspace)
+    form = TransactionCaseForm(request.POST or None, instance=item, workspace=workspace)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("ai_transaction_detail", case_id=item.pk)
+    return render(request, "ai_workflows/create.html", {"form": form, "case": item})
+
+@login_required
 def transaction_detail(request, case_id):
     workspace = single_workspace_for(request.user)
     item = get_object_or_404(TransactionCase, pk=case_id, workspace=workspace)
