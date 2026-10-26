@@ -137,3 +137,16 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Configure SMTP on Render before enabling outbound inquiry alerts.
+# An empty host disables notifications rather than using an unintended local server.
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ.get("CRM_EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("CRM_EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("CRM_EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("CRM_EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("CRM_EMAIL_USE_TLS", "True").lower() == "true"
+EMAIL_USE_SSL = os.environ.get("CRM_EMAIL_USE_SSL", "False").lower() == "true"
+EMAIL_TIMEOUT = 10
+DEFAULT_FROM_EMAIL = os.environ.get("CRM_EMAIL_FROM", "")
+CRM_AGENT_EMAIL_NOTIFICATIONS = os.environ.get("CRM_AGENT_EMAIL_NOTIFICATIONS", "False").lower() == "true"
