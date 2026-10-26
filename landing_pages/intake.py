@@ -4,6 +4,7 @@ from people.models import Person
 from leads.models import Lead
 from tasks.models import Task
 from accounts.models import Membership
+from .notifications import notify_assigned_agent
 
 TEMPLATE_TO_LEAD_TYPE = {
     "valuation": "seller",
@@ -46,4 +47,6 @@ def create_landing_inquiry(page, cleaned):
         priority="high",
         description="New landing page inquiry, lead #" + str(lead.pk),
     )
+    if assigned_agent:
+        transaction.on_commit(lambda lead_id=lead.pk: notify_assigned_agent(lead_id))
     return lead
