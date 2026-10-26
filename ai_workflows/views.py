@@ -15,7 +15,7 @@ def workbench(request):
     return render(request, "ai_workflows/workbench.html", {
         "leads": Lead.objects.filter(workspace=workspace).select_related("person").order_by("-created_at")[:40],
         "cases": TransactionCase.objects.filter(workspace=workspace).order_by("-created_at")[:50],
-        "recommendations": AgentRecommendation.objects.filter(workspace=workspace).order_by("-created_at")[:30],
+        "recommendations": AgentRecommendation.objects.filter(workspace=workspace, status="proposed").select_related("lead__person", "transaction").order_by("-created_at")[:30],
     })
 
 @login_required
@@ -24,6 +24,7 @@ def review_lead(request, lead_id):
     workspace = single_workspace_for(request.user)
     lead = get_object_or_404(Lead, pk=lead_id, workspace=workspace)
     with db_transaction.atomic():
+        AgentRecommendation.objects.filter(workspace=workspace, kind="lead", lead=lead, status="proposed").update(status="dismissed")
         for title, explanation in lead_review(lead):
             AgentRecommendation.objects.get_or_create(
                 workspace=workspace, kind="lead", lead=lead, status="proposed", title=title,
@@ -67,6 +68,7 @@ def review_transaction(request, case_id):
     workspace = single_workspace_for(request.user)
     item = get_object_or_404(TransactionCase, pk=case_id, workspace=workspace)
     with db_transaction.atomic():
+        AgentRecommendation.objects.filter(workspace=workspace, kind="transaction", transaction=item, status="proposed").update(status="dismissed")
         for title, explanation in transaction_review(item):
             AgentRecommendation.objects.get_or_create(
                 workspace=workspace, kind="transaction", transaction=item, status="proposed", title=title,
