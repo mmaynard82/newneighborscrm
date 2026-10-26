@@ -66,3 +66,20 @@ class AgentWorkbenchTests(TestCase):
         response = self.client.post(reverse("ai_create_transaction"), {"title":"New contract", "stage":"under_contract", "lead":self.lead.pk})
         self.assertEqual(response.status_code, 302)
         self.assertTrue(TransactionCase.objects.filter(workspace=self.workspace, lead=self.lead, title="New contract").exists())
+
+    def test_lead_proposals_identify_lead_and_refresh_without_duplicate_active_items(self):
+        self.client.post(reverse("ai_review_lead", args=[self.lead.pk]))
+        first = AgentRecommendation.objects.filter(lead=self.lead, status="proposed").count()
+        self.assertGreater(first, 0)
+        response = self.client.get(reverse("ai_workbench"))
+        self.assertContains(response, "Dana Client (Lead #")
+        self.client.post(reverse("ai_review_lead", args=[self.lead.pk]))
+        self.assertEqual(AgentRecommendation.objects.filter(lead=self.lead, status="proposed").count(), first)
+        self.assertEqual(AgentRecommendation.objects.filter(lead=self.lead).count(), first * 2)
+
+    def test_acknowledged_recommendations_not_in_active_queue(self):
+        self.client.post(reverse("ai_review_lead", args=[self.lead.pk]))
+        item = AgentRecommendation.objects.filter(lead=self.lead, status="proposed").first()
+        self.client.post(reverse("ai_update_recommendation", args=[item.pk, "acknowledged"]))
+        response = self.client.get(reverse("ai_workbench"))
+        self.assertNotContains(response, item.explanation)
