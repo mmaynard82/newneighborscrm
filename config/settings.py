@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "communications",
     "campaigns",
     "landing_pages",
+    "ai_workflows",
 ]
 
 
