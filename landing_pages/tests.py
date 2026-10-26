@@ -415,3 +415,69 @@ class LandingPageCRMDesignTests(TestCase):
         self.assertContains(response, 'name="headline"')
         self.assertContains(response, 'name="assigned_agent"')
         self.assertContains(response, "Save Draft")
+
+
+class LandingLeadEmailNotificationTests(TestCase):
+    def setUp(self):
+        self.agent = get_user_model().objects.create_user(
+            "email_agent", email="assigned@example.test", password="example"
+        )
+        self.workspace = Workspace.objects.create(name="Email brokerage", kind="brokerage")
+        Membership.objects.create(user=self.agent, workspace=self.workspace, role="agent")
+        self.page = LandingPage.objects.create(
+            workspace=self.workspace, title="Email Valuation", slug="email-valuation",
+            headline="Get in touch", template="valuation", assigned_agent=self.agent
+        )
+        self.payload = {
+            "first_name": "Taylor", "last_name": "Example", "email": "taylor@example.test",
+            "phone": "2035550100", "message": "I would like a consultation."
+        }
+
+    def test_assigned_agent_gets_one_post_commit_email_with_crm_link(self):
+        from django.test import override_settings
+        from django.core import mail
+        from .intake import create_landing_inquiry
+        with override_settings(
+            CRM_AGENT_EMAIL_NOTIFICATIONS=True,
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+            EMAIL_HOST="smtp.example.test",
+            DEFAULT_FROM_EMAIL="notifications@example.test",
+        ):
+            with self.captureOnCommitCallbacks(execute=True) as callbacks:
+                lead = create_landing_inquiry(self.page, self.payload)
+            self.assertEqual(len(callbacks), 1)
+            self.assertEqual(len(mail.outbox), 1)
+            self.assertEqual(mail.outbox[0].to, ["assigned@example.test"])
+            self.assertIn("/lead/{}/".format(lead.pk), mail.outbox[0].body)
+            self.assertNotIn(self.payload["email"], mail.outbox[0].body)
+
+    def test_no_email_for_unassigned_page(self):
+        from django.test import override_settings
+        from django.core import mail
+        from .intake import create_landing_inquiry
+        self.page.assigned_agent = None
+        self.page.save(update_fields=["assigned_agent"])
+        with override_settings(CRM_AGENT_EMAIL_NOTIFICATIONS=True, EMAIL_HOST="smtp.example.test", DEFAULT_FROM_EMAIL="test@example.test", EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+            with self.captureOnCommitCallbacks(execute=True):
+                create_landing_inquiry(self.page, self.payload)
+            self.assertEqual(len(mail.outbox), 0)
+
+    def test_disabled_notifications_do_not_send(self):
+        from django.test import override_settings
+        from django.core import mail
+        from .intake import create_landing_inquiry
+        with override_settings(CRM_AGENT_EMAIL_NOTIFICATIONS=False, EMAIL_HOST="smtp.example.test", DEFAULT_FROM_EMAIL="test@example.test", EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+            with self.captureOnCommitCallbacks(execute=True):
+                create_landing_inquiry(self.page, self.payload)
+            self.assertEqual(len(mail.outbox), 0)
+
+    def test_smtp_failure_does_not_prevent_lead_creation(self):
+        from unittest.mock import patch
+        from django.test import override_settings
+        from leads.models import Lead
+        from .intake import create_landing_inquiry
+        with override_settings(CRM_AGENT_EMAIL_NOTIFICATIONS=True, EMAIL_HOST="smtp.example.test", DEFAULT_FROM_EMAIL="test@example.test"):
+            with patch("landing_pages.notifications.send_mail", side_effect=ConnectionError("SMTP unavailable")):
+                with self.captureOnCommitCallbacks(execute=True):
+                    lead = create_landing_inquiry(self.page, self.payload)
+        self.assertTrue(Lead.objects.filter(pk=lead.pk).exists())
