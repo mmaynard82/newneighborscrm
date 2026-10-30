@@ -473,291 +473,34 @@
 </aside>
 
     <main class="main">
-
-        <div class="testing-banner">
-            Testing Version: This CRM is currently being tested. Please report any issues before relying on this as the final live system.
-        </div>
-
-        <div class="topbar">
-            <div>
-                <h2>Dashboard</h2>
-                <p>Overview of your contacts, leads, properties, tasks, maintenance, and follow-ups.</p>
-            </div>
-
-            <div class="top-actions">
-                <a class="btn btn-primary" href="/add-lead/">Add Lead</a>
-                <a class="btn btn-secondary" href="/pipeline/">View Pipeline</a>
-                <a class="btn btn-secondary" href="/people/add/">Add Contact</a>
-            </div>
-        </div>
-
-        <div class="stat-grid">
-
-            <div class="stat-card">
-                <h3>Contacts</h3>
-                <p class="stat-number">{{ total_people }}</p>
-                <p class="stat-note">Visible contacts</p>
-            </div>
-
-            <div class="stat-card">
-                <h3>Properties</h3>
-                <p class="stat-number">{{ total_properties }}</p>
-                <p class="stat-note">Total property records</p>
-            </div>
-
-            <div class="stat-card success">
-                <h3>New Leads</h3>
-                <p class="stat-number">{{ new_leads }}</p>
-                <p class="stat-note">Needs first action</p>
-            </div>
-
-            <div class="stat-card success">
-                <h3>Active Services</h3>
-                <p class="stat-number">{{ active_services }}</p>
-                <p class="stat-note">Currently active service records</p>
-            </div>
-
-            <div class="stat-card warning">
-                <h3>Tasks Due Today</h3>
-                <p class="stat-number">{{ tasks_due_today }}</p>
-                <p class="stat-note">Open or in progress</p>
-            </div>
-
-            <div class="stat-card danger">
-                <h3>Overdue Tasks</h3>
-                <p class="stat-number">{{ overdue_tasks }}</p>
-                <p class="stat-note">Needs attention</p>
-            </div>
-
-            <div class="stat-card warning">
-                <h3>High Priority Tasks</h3>
-                <p class="stat-number">{{ high_priority_tasks }}</p>
-                <p class="stat-note">High or urgent</p>
-            </div>
-
-            <div class="stat-card">
-                <h3>Open Maintenance</h3>
-                <p class="stat-number">{{ open_maintenance }}</p>
-                <p class="stat-note">Not completed or cancelled</p>
-            </div>
-
-            <div class="stat-card danger">
-                <h3>Emergency Maintenance</h3>
-                <p class="stat-number">{{ emergency_maintenance }}</p>
-                <p class="stat-note">Emergency priority requests</p>
-            </div>
-
-            <div class="stat-card warning">
-                <h3>Inspections Due</h3>
-                <p class="stat-number">{{ inspections_due }}</p>
-                <p class="stat-note">Due today or overdue</p>
-            </div>
-
-        </div>
-
-        <div class="section">
-            <h3>Quick Actions</h3>
-            <p class="section-subtitle">Common actions for agents and admins.</p>
-
-            <div class="quick-grid">
-                <a class="quick-card" href="/pipeline/">
-                    <strong>Move Leads</strong>
-                    <span>Open the pipeline and click a stage button to move leads.</span>
-                </a>
-
-                <a class="quick-card" href="/add-lead/">
-                    <strong>Add Lead</strong>
-                    <span>Create a new lead and follow-up task.</span>
-                </a>
-
-                <a class="quick-card" href="/people/add/">
-                    <strong>Add Contact</strong>
-                    <span>Create a contact record without using Django Admin.</span>
-                </a>
-
-                <a class="quick-card" href="/properties/add/">
-                    <strong>Add Property</strong>
-                    <span>Create a property record and link it to a contact.</span>
-                </a>
-
-                <a class="quick-card" href="/import-leads/">
-                    <strong>Import Leads</strong>
-                    <span>Upload a CSV list of contacts and leads.</span>
-                </a>
-
-                <a class="quick-card" href="/campaigns/add/">
-                    <strong>Add Campaign</strong>
-                    <span>Build an email or outreach campaign audience.</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="content-grid">
-
-            <div>
-
-                <div class="section">
-                    <h3>Recent Leads</h3>
-                    <p class="section-subtitle">Newest visible leads.</p>
-
-                    {% for lead in recent_leads %}
-                        <div class="list-item">
-                            <div class="list-title">
-                                <a href="/lead/{{ lead.id }}/">{{ lead.person }}</a>
-                            </div>
-                            <div class="list-meta">
-                                {{ lead.get_lead_type_display }} · {{ lead.get_status_display }}
-                                <br>
-                                Source: {{ lead.source|default:"Not listed" }}
-                                <br>
-                                Property: {{ lead.related_property|default:"Not linked" }}
-                            </div>
-                        </div>
-                    {% empty %}
-                        <div class="empty">No recent leads.</div>
-                    {% endfor %}
-                </div>
-
-                <div class="section">
-                    <h3>Upcoming Tasks</h3>
-                    <p class="section-subtitle">Open tasks sorted by due date.</p>
-
-                    {% for task in upcoming_tasks %}
-                        <div class="list-item">
-                            <div class="list-title">
-                                {{ task.title }}
-                            </div>
-                            <div class="list-meta">
-                                Due: {{ task.due_date|default:"Not scheduled" }}
-                                <br>
-                                Priority: {{ task.get_priority_display }} · Status: {{ task.get_status_display }}
-                                <br>
-                                Contact: {{ task.related_person|default:"Not linked" }}
-                            </div>
-
-                            {% if task.priority == "urgent" or task.priority == "high" %}
-                                <span class="badge badge-warning">{{ task.get_priority_display }}</span>
-                            {% endif %}
-                        </div>
-                    {% empty %}
-                        <div class="empty">No upcoming tasks.</div>
-                    {% endfor %}
-                </div>
-
-                <div class="section">
-                    <h3>Recent Documents</h3>
-                    <p class="section-subtitle">Most recently uploaded documents.</p>
-
-                    {% for document in recent_documents %}
-                        <div class="list-item">
-                            <div class="list-title">
-                                {{ document.title }}
-                            </div>
-                            <div class="list-meta">
-                                Type: {{ document.get_document_type_display|default:"Not listed" }}
-                                <br>
-                                Uploaded: {{ document.uploaded_at|date:"M d, Y" }}
-                                {% if document.file %}
-                                    <br>
-                                    <a class="small-link" href="{{ document.file.url }}" target="_blank">Open Document</a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% empty %}
-                        <div class="empty">No recent documents.</div>
-                    {% endfor %}
-                </div>
-
-            </div>
-
-            <div>
-
-                <div class="section">
-                    <h3>Recent Maintenance</h3>
-                    <p class="section-subtitle">Open maintenance requests.</p>
-
-                    {% for request in recent_maintenance %}
-                        <div class="list-item">
-                            <div class="list-title">
-                                {{ request.title }}
-                            </div>
-                            <div class="list-meta">
-                                Property: {{ request.property }}
-                                <br>
-                                Status: {{ request.get_status_display }}
-                                <br>
-                                Reported: {{ request.date_reported|date:"M d, Y" }}
-                            </div>
-
-                            {% if request.priority == "emergency" %}
-                                <span class="badge badge-danger">Emergency</span>
-                            {% elif request.priority == "high" %}
-                                <span class="badge badge-warning">High</span>
-                            {% else %}
-                                <span class="badge">{{ request.get_priority_display }}</span>
-                            {% endif %}
-                        </div>
-                    {% empty %}
-                        <div class="empty">No recent maintenance requests.</div>
-                    {% endfor %}
-                </div>
-
-                <div class="section">
-                    <h3>Upcoming Inspections</h3>
-                    <p class="section-subtitle">Next scheduled or due inspections.</p>
-
-                    {% for inspection in upcoming_inspections %}
-                        <div class="list-item">
-                            <div class="list-title">
-                                {{ inspection.property }}
-                            </div>
-                            <div class="list-meta">
-                                Type: {{ inspection.get_inspection_type_display|default:"Inspection" }}
-                                <br>
-                                Next inspection: {{ inspection.next_inspection_date|default:"Not scheduled" }}
-                                <br>
-                                Status: {{ inspection.get_status_display|default:"Not listed" }}
-                            </div>
-                        </div>
-                    {% empty %}
-                        <div class="empty">No upcoming inspections.</div>
-                    {% endfor %}
-                </div>
-
-                <div class="section">
-                    <h3>Agent Testing Checklist</h3>
-                    <p class="section-subtitle">Use this during test-live review.</p>
-
-                    <div class="list-item">
-                        <div class="list-title">1. Add a contact</div>
-                        <div class="list-meta">Confirm contact saves and appears under Contacts.</div>
-                    </div>
-
-                    <div class="list-item">
-                        <div class="list-title">2. Add a property</div>
-                        <div class="list-meta">Confirm property saves and links to a contact.</div>
-                    </div>
-
-                    <div class="list-item">
-                        <div class="list-title">3. Add a lead</div>
-                        <div class="list-meta">Confirm lead appears in the pipeline.</div>
-                    </div>
-
-                    <div class="list-item">
-                        <div class="list-title">4. Move a lead stage</div>
-                        <div class="list-meta">Use the Pipeline buttons to move the lead.</div>
-                    </div>
-
-                    <div class="list-item">
-                        <div class="list-title">5. Log communication and task</div>
-                        <div class="list-meta">Open a lead and test follow-up workflow.</div>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
+      <div class="testing-banner">Sales brokerage CRM · Contract templates must be brokerage-approved. Verify documents and signers before sending.</div>
+      <div class="topbar">
+        <div><h2>Sales Brokerage Dashboard</h2><p>Buyers, sellers, listings, contracts, closings and follow-ups.</p></div>
+        <div class="top-actions"><a class="btn btn-primary" href="/add-lead/">Add Lead</a><a class="btn btn-secondary" href="/ai-workbench/">Sales Transactions</a><a class="btn btn-secondary" href="/ai-workbench/paperwork/templates/">Contract Templates</a></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><h3>Contacts</h3><p class="stat-number">{{ total_people }}</p><p class="stat-note">Brokerage contacts</p></div>
+        <div class="stat-card"><h3>Listings / Properties</h3><p class="stat-number">{{ total_properties }}</p><p class="stat-note">Recorded properties</p></div>
+        <div class="stat-card success"><h3>New Leads</h3><p class="stat-number">{{ new_leads }}</p><p class="stat-note">Needs first contact</p></div>
+        <div class="stat-card success"><h3>Active Transactions</h3><p class="stat-number">{{ active_transactions }}</p><p class="stat-note">Not closed or cancelled</p></div>
+        <div class="stat-card warning"><h3>Contract Drafts</h3><p class="stat-number">{{ pending_contract_packets }}</p><p class="stat-note">Awaiting review / e-sign</p></div>
+        <div class="stat-card"><h3>Closings This Month</h3><p class="stat-number">{{ closing_this_month }}</p><p class="stat-note">Scheduled closing dates</p></div>
+        <div class="stat-card warning"><h3>Tasks Due Today</h3><p class="stat-number">{{ tasks_due_today }}</p></div>
+        <div class="stat-card danger"><h3>Overdue Tasks</h3><p class="stat-number">{{ overdue_tasks }}</p></div>
+        <div class="stat-card warning"><h3>High Priority Tasks</h3><p class="stat-number">{{ high_priority_tasks }}</p></div>
+      </div>
+      <div class="section"><h3>Quick Actions</h3><div class="quick-grid">
+        <a class="quick-card" href="/pipeline/"><strong>Sales Pipeline</strong><span>Track prospects and deal stages.</span></a>
+        <a class="quick-card" href="/ai-workbench/"><strong>Sales Transactions</strong><span>Manage active deals and deadlines.</span></a>
+        <a class="quick-card" href="/ai-workbench/paperwork/templates/"><strong>Contract Paperwork</strong><span>Configure approved forms and signatures.</span></a>
+        <a class="quick-card" href="/landing-pages/"><strong>Lead Capture Pages</strong><span>Manage seller and buyer inquiry pages.</span></a>
+        <a class="quick-card" href="/people/add/"><strong>Add Contact</strong><span>Create a new brokerage contact.</span></a>
+        <a class="quick-card" href="/properties/add/"><strong>Add Listing / Property</strong><span>Link a property to a client.</span></a>
+      </div></div>
+      <div class="content-grid"><div>
+        <div class="section"><h3>Recent Leads</h3>{% for lead in recent_leads %}<div class="list-item"><div class="list-title"><a href="/lead/{{ lead.id }}/">{{ lead.person }}</a></div><div class="list-meta">{{ lead.get_lead_type_display }} · {{ lead.get_status_display }}</div></div>{% empty %}<p class="empty">No recent sales leads.</p>{% endfor %}</div>
+        <div class="section"><h3>Upcoming Tasks</h3>{% for task in upcoming_tasks %}<div class="list-item"><div class="list-title">{{ task.title }}</div><div class="list-meta">Due: {{ task.due_date|default:"Not scheduled" }} · {{ task.get_priority_display }}</div></div>{% empty %}<p class="empty">No upcoming tasks.</p>{% endfor %}</div>
+      </div><div><div class="section"><h3>Recent Sales Transactions</h3>{% for case in recent_transactions %}<div class="list-item"><div class="list-title"><a href="{% url 'ai_transaction_detail' case.pk %}">{{ case.title }}</a></div><div class="list-meta">{{ case.get_stage_display }} · Closing: {{ case.closing_date|default:"Unconfirmed" }}</div></div>{% empty %}<p class="empty">No sales transactions yet. Create one from the Sales Transactions workbench.</p>{% endfor %}</div></div></div>
     </main>
 
 </div>
