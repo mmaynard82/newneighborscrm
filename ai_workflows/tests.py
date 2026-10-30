@@ -173,3 +173,87 @@ class BrokeragePaperworkTests(TestCase):
         old = Lead.objects.create(workspace=self.workspace, person=old_person, lead_type="property_management")
         self.assertNotIn(old.lead_type, get_allowed_lead_type_keys(self.owner))
         self.assertTrue(Lead.objects.filter(pk=old.pk).exists())
+
+
+class FieldAgentBridgeTests(TestCase):
+    def setUp(self):
+        from .models import FieldAppointment
+        self.owner = get_user_model().objects.create_user("field_owner", password="test")
+        self.other_user = get_user_model().objects.create_user("field_other", password="test")
+        self.workspace = Workspace.objects.create(name="Field desk", kind="brokerage")
+        self.other = Workspace.objects.create(name="Other field desk", kind="brokerage")
+        Membership.objects.create(user=self.owner, workspace=self.workspace, role="owner")
+        Membership.objects.create(user=self.other_user, workspace=self.other, role="agent")
+        person = Person.objects.create(workspace=self.workspace, first_name="Avery", last_name="Buyer", email="avery@example.test", person_type="lead")
+        foreign = Person.objects.create(workspace=self.other, first_name="Morgan", last_name="Seller", email="morgan@example.test", person_type="lead")
+        self.lead = Lead.objects.create(workspace=self.workspace, person=person, lead_type="buyer", notes="Looking for a condo")
+        self.foreign_lead = Lead.objects.create(workspace=self.other, person=foreign, lead_type="seller")
+        self.case = TransactionCase.objects.create(workspace=self.workspace, title="Main Street contract", lead=self.lead)
+        self.client.force_login(self.owner)
+
+    def test_field_desk_has_showings_and_agent_team_actions(self):
+        response = self.client.get(reverse("ai_workbench"))
+        self.assertContains(response, "Agent Field Desk")
+        self.assertContains(response, "Schedule showing")
+        self.assertContains(response, "Ask LeadPilot AI")
+        self.assertContains(response, "Offers")
+
+    def test_appointment_cannot_use_foreign_client(self):
+        from .models import FieldAppointment
+        time = (timezone.now() + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M")
+        response = self.client.post(reverse("field_appointment_new"), {
+            "title": "Buyer tour", "event_type": "showing", "starts_at": time,
+            "lead": self.foreign_lead.pk, "status": "scheduled",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("lead", response.context["form"].errors)
+        self.assertFalse(FieldAppointment.objects.filter(title="Buyer tour").exists())
+
+    def test_valid_showing_appears_in_field_calendar(self):
+        from .models import FieldAppointment
+        time = (timezone.now() + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M")
+        response = self.client.post(reverse("field_appointment_new"), {
+            "title": "Private condo tour", "event_type": "showing",
+            "starts_at": time, "lead": self.lead.pk, "status": "scheduled",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(FieldAppointment.objects.filter(workspace=self.workspace, title="Private condo tour").exists())
+        self.assertContains(self.client.get(reverse("ai_workbench")), "Private condo tour")
+
+    def test_unconfigured_bridge_creates_nonblocking_audit(self):
+        from .models import LeadPilotReview
+        from unittest.mock import patch
+        with patch.dict("os.environ", {}, clear=True):
+            response = self.client.post(reverse("leadpilot_start_lead", args=[self.lead.pk]))
+        self.assertEqual(response.status_code, 302)
+        review = LeadPilotReview.objects.get(lead=self.lead)
+        self.assertEqual(review.status, "unavailable")
+        self.assertFalse(review.remote_run_id)
+
+    def test_client_cannot_start_foreign_lead_review(self):
+        from .models import LeadPilotReview
+        response = self.client.post(reverse("leadpilot_start_lead", args=[self.foreign_lead.pk]))
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(LeadPilotReview.objects.exists())
+
+    def test_leadpilot_result_requires_explicit_refresh_and_never_sends_message(self):
+        from .models import LeadPilotReview
+        from unittest.mock import patch
+        from tasks.models import Task
+        before = Task.objects.count()
+        with patch("ai_workflows.views.start_review", return_value={"run_id":"0d97b1b3-1425-4e50-8ccb-5e2d9b9c1f6e","status":"queued"}):
+            response = self.client.post(reverse("leadpilot_start_transaction", args=[self.case.pk]))
+        self.assertEqual(response.status_code, 302)
+        review = LeadPilotReview.objects.get(transaction=self.case)
+        self.assertEqual(review.status, "queued")
+        with patch("ai_workflows.views.check_review", return_value={"run_id":review.remote_run_id, "status":"awaiting_approval", "result":{"summary":"Verify financing dates"}}):
+            response = self.client.post(reverse("leadpilot_refresh", args=[review.pk]))
+        self.assertEqual(response.status_code, 302)
+        review.refresh_from_db()
+        self.assertEqual(review.result_json["summary"], "Verify financing dates")
+        self.assertEqual(Task.objects.count(), before)
+
+    def test_refresh_cannot_view_other_workspace_reviews(self):
+        from .models import LeadPilotReview
+        foreign = LeadPilotReview.objects.create(workspace=self.other, lead=self.foreign_lead, reference="foreign-review-123", remote_run_id="0d97b1b3-1425-4e50-8ccb-5e2d9b9c1f6e")
+        self.assertEqual(self.client.post(reverse("leadpilot_refresh", args=[foreign.pk])).status_code, 404)

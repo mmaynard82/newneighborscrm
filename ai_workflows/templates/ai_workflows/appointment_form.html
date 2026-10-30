@@ -1,0 +1,8 @@
+{% extends "ai_workflows/base.html" %}{% block content %}
+<div class="topbar"><h1>{% if appointment %}Edit appointment{% else %}Schedule an agent appointment{% endif %}</h1>
+<p class="muted">Showings, buyer tours, listing presentations, inspections, appraisals, final walk-throughs and closings. Set dates and times confirmed with your clients.</p></div>
+<div class="card form-card"><form method="post">{% csrf_token %}{{ form.non_field_errors }}
+{% for field in form %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+<div class="actions"><button type="submit">Save appointment</button><a class="btn secondary" href="{% url 'ai_workbench' %}">Cancel</a></div>
+</form></div>
+{% endblock %}
