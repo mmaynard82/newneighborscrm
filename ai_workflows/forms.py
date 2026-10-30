@@ -53,3 +53,36 @@ class BrokerageContractPacketForm(forms.ModelForm):
                     if not data.get(role + "_name") or not data.get(role + "_email"):
                         self.add_error(role + "_email", "Name and email are required for this template's " + role + " signer.")
         return data
+
+
+from django.contrib.auth import get_user_model
+from accounts.models import Membership
+from .models import FieldAppointment
+
+
+class FieldAppointmentForm(forms.ModelForm):
+    class Meta:
+        model = FieldAppointment
+        fields = ["event_type", "title", "lead", "transaction", "assigned_agent", "location", "starts_at", "ends_at", "notes", "status"]
+        widgets = {
+            "starts_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            "ends_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
+    def __init__(self, *args, workspace=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["lead"].queryset = Lead.objects.filter(workspace=workspace) if workspace else Lead.objects.none()
+        self.fields["transaction"].queryset = TransactionCase.objects.filter(workspace=workspace) if workspace else TransactionCase.objects.none()
+        allowed_ids = Membership.objects.filter(
+            workspace=workspace, is_active=True, user__is_active=True,
+        ).values_list("user_id", flat=True) if workspace else []
+        self.fields["assigned_agent"].queryset = get_user_model().objects.filter(pk__in=allowed_ids)
+        self.fields["assigned_agent"].required = False
+        self.fields["starts_at"].input_formats = ["%Y-%m-%dT%H:%M"]
+        self.fields["ends_at"].input_formats = ["%Y-%m-%dT%H:%M"]
+    def clean(self):
+        data = super().clean()
+        start, end = data.get("starts_at"), data.get("ends_at")
+        if start and end and end <= start:
+            self.add_error("ends_at", "End time must be after start time.")
+        return data
