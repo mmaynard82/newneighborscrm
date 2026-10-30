@@ -12,7 +12,11 @@ from .models import AgentRecommendation, TransactionCase
 @login_required
 def workbench(request):
     workspace = single_workspace_for(request.user)
+    from django.utils import timezone
+    from .models import FieldAppointment, LeadPilotReview
     return render(request, "ai_workflows/workbench.html", {
+        "appointments": FieldAppointment.objects.filter(workspace=workspace, status="scheduled", starts_at__gte=timezone.now()).select_related("lead__person", "assigned_agent", "transaction").order_by("starts_at")[:12],
+        "remote_reviews": LeadPilotReview.objects.filter(workspace=workspace).select_related("lead__person", "transaction").order_by("-created_at")[:12],
         "leads": Lead.objects.filter(workspace=workspace).select_related("person").order_by("-created_at")[:40],
         "cases": TransactionCase.objects.filter(workspace=workspace).order_by("-created_at")[:50],
         "recommendations": AgentRecommendation.objects.filter(workspace=workspace).order_by("-created_at")[:30],
@@ -219,3 +223,106 @@ def send_contract_packet(request, packet_id):
         locked.save(update_fields=["provider_request_id", "sent_test_mode", "sent_at", "status", "updated_at"])
     messages.success(request, "Dropbox Sign accepted the signature request. Check provider status for completion.")
     return redirect("brokerage_contract_packet", packet_id=packet.pk)
+
+
+from django.contrib import messages
+from django.utils import timezone
+from django.utils.crypto import get_random_string
+from .models import FieldAppointment, LeadPilotReview
+from .forms import FieldAppointmentForm
+from .leadpilot_bridge import start_review, check_review, LeadPilotBridgeError
+
+
+@login_required
+def field_appointment_new(request):
+    workspace = single_workspace_for(request.user)
+    form = FieldAppointmentForm(request.POST or None, workspace=workspace)
+    if request.method == "POST" and form.is_valid():
+        item = form.save(commit=False)
+        item.workspace = workspace
+        item.save()
+        return redirect("ai_workbench")
+    return render(request, "ai_workflows/appointment_form.html", {"form": form})
+
+
+@login_required
+def field_appointment_edit(request, appointment_id):
+    workspace = single_workspace_for(request.user)
+    item = get_object_or_404(FieldAppointment, pk=appointment_id, workspace=workspace)
+    form = FieldAppointmentForm(request.POST or None, instance=item, workspace=workspace)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("ai_workbench")
+    return render(request, "ai_workflows/appointment_form.html", {"form": form, "appointment": item})
+
+
+@login_required
+@require_POST
+def leadpilot_start_lead(request, lead_id):
+    workspace = single_workspace_for(request.user)
+    lead = get_object_or_404(Lead.objects.select_related("person"), pk=lead_id, workspace=workspace)
+    review = LeadPilotReview.objects.create(
+        workspace=workspace, lead=lead, requested_by=request.user,
+        reference="crm-{}-lead-{}-{}".format(workspace.pk, lead.pk, get_random_string(12)),
+    )
+    try:
+        response = start_review(review, lead)
+    except LeadPilotBridgeError as exc:
+        review.status = "unavailable"
+        review.error_message = str(exc)
+        review.save(update_fields=["status", "error_message", "updated_at"])
+        messages.warning(request, str(exc))
+    else:
+        review.remote_run_id = response["run_id"]
+        review.status = response.get("status", "queued")[:30]
+        review.save(update_fields=["remote_run_id", "status", "updated_at"])
+        messages.success(request, "LeadPilot Real Estate Lead Team review queued. Refresh its status when ready.")
+    return redirect("ai_workbench")
+
+
+@login_required
+@require_POST
+def leadpilot_start_transaction(request, case_id):
+    workspace = single_workspace_for(request.user)
+    case = get_object_or_404(TransactionCase, pk=case_id, workspace=workspace)
+    review = LeadPilotReview.objects.create(
+        workspace=workspace, transaction=case, requested_by=request.user,
+        reference="crm-{}-transaction-{}-{}".format(workspace.pk, case.pk, get_random_string(12)),
+    )
+    try:
+        response = start_review(review, case)
+    except LeadPilotBridgeError as exc:
+        review.status = "unavailable"
+        review.error_message = str(exc)
+        review.save(update_fields=["status", "error_message", "updated_at"])
+        messages.warning(request, str(exc))
+    else:
+        review.remote_run_id = response["run_id"]
+        review.status = response.get("status", "queued")[:30]
+        review.save(update_fields=["remote_run_id", "status", "updated_at"])
+        messages.success(request, "LeadPilot Real Estate Transaction Team review queued. Refresh its status when ready.")
+    return redirect("ai_transaction_detail", case_id=case.pk)
+
+
+@login_required
+@require_POST
+def leadpilot_refresh(request, review_id):
+    workspace = single_workspace_for(request.user)
+    review = get_object_or_404(LeadPilotReview, pk=review_id, workspace=workspace)
+    if not review.remote_run_id:
+        messages.warning(request, "No remote run is connected to this review.")
+    else:
+        try:
+            response = check_review(review)
+        except LeadPilotBridgeError as exc:
+            messages.error(request, str(exc))
+        else:
+            review.status = response.get("status", "pending")[:30]
+            result = response.get("result")
+            if isinstance(result, (dict, list)):
+                review.result_json = result
+            review.error_message = str(response.get("error") or "")[:300]
+            review.save(update_fields=["status", "result_json", "error_message", "updated_at"])
+    if review.transaction_id:
+        return redirect("ai_transaction_detail", case_id=review.transaction_id)
+    return redirect("ai_workbench")
