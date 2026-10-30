@@ -71,3 +71,43 @@ class BrokerageContractPacket(models.Model):
 
     def __str__(self):
         return self.template.name + " / " + self.transaction.title
+
+
+class FieldAppointment(models.Model):
+    """Agent's real-world showing, appointment, and contract-to-close schedule."""
+    id = models.BigAutoField(primary_key=True)
+    workspace = models.ForeignKey("accounts.Workspace", on_delete=models.PROTECT, related_name="field_appointments")
+    lead = models.ForeignKey("leads.Lead", on_delete=models.SET_NULL, null=True, blank=True, related_name="field_appointments")
+    transaction = models.ForeignKey(TransactionCase, on_delete=models.SET_NULL, null=True, blank=True, related_name="field_appointments")
+    assigned_agent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="field_appointments")
+    event_type = models.CharField(max_length=30, choices=[
+        ("buyer_consult", "Buyer consultation"), ("seller_consult", "Listing appointment"),
+        ("showing", "Property showing"), ("open_house", "Open house"),
+        ("offer", "Offer review"), ("inspection", "Home inspection"),
+        ("appraisal", "Appraisal"), ("walkthrough", "Final walk-through"),
+        ("closing", "Closing"), ("follow_up", "Client follow-up"),
+    ])
+    title = models.CharField(max_length=200)
+    location = models.CharField(max_length=300, blank=True)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=[
+        ("scheduled", "Scheduled"), ("completed", "Completed"), ("cancelled", "Cancelled"),
+    ], default="scheduled")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class LeadPilotReview(models.Model):
+    """Remote agent output is informational only; cannot directly mutate CRM."""
+    id = models.BigAutoField(primary_key=True)
+    workspace = models.ForeignKey("accounts.Workspace", on_delete=models.PROTECT, related_name="leadpilot_reviews")
+    lead = models.ForeignKey("leads.Lead", on_delete=models.CASCADE, null=True, blank=True, related_name="leadpilot_reviews")
+    transaction = models.ForeignKey(TransactionCase, on_delete=models.CASCADE, null=True, blank=True, related_name="leadpilot_reviews")
+    reference = models.CharField(max_length=150, unique=True)
+    remote_run_id = models.CharField(max_length=36, blank=True)
+    status = models.CharField(max_length=30, default="pending")
+    result_json = models.JSONField(default=dict, blank=True)
+    error_message = models.CharField(max_length=300, blank=True)
+    requested_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
