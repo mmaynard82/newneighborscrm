@@ -64,6 +64,7 @@ def transaction_detail(request, case_id):
         "case": item,
         "recommendations": AgentRecommendation.objects.filter(workspace=workspace, transaction=item).order_by("-created_at"),
         "packets": item.contract_packets.select_related("template").order_by("-created_at"),
+        "remote_reviews": item.leadpilot_reviews.order_by("-created_at")[:10],
     })
 
 @login_required
