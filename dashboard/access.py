@@ -22,6 +22,7 @@ REAL_ESTATE_ONLY_LEAD_TYPES = [
     "referral",
     "probate_estate",
     "downsizing",
+    "flat_fee_listing",
     "other",
 ]
 
@@ -34,23 +35,7 @@ def user_has_full_crm_access(user):
 
 
 def get_allowed_lead_type_keys(user):
-    """
-    Superusers and CRM Full Access users can see all lead types.
-
-    Real Estate Only users can only see real estate lead types.
-
-    Any user without a specific CRM access group defaults to Real Estate Only
-    for safety.
-    """
-
-    all_lead_types = [value for value, label in Lead.LEAD_TYPES]
-
-    if user_has_full_crm_access(user):
-        return all_lead_types
-
-    if user.groups.filter(name=REAL_ESTATE_ONLY_GROUP_NAME).exists():
-        return REAL_ESTATE_ONLY_LEAD_TYPES
-
+    """Sales-only CRM; legacy service leads remain stored for administrative export."""
     return REAL_ESTATE_ONLY_LEAD_TYPES
 
 
