@@ -66,3 +66,110 @@ class AgentWorkbenchTests(TestCase):
         response = self.client.post(reverse("ai_create_transaction"), {"title":"New contract", "stage":"under_contract", "lead":self.lead.pk})
         self.assertEqual(response.status_code, 302)
         self.assertTrue(TransactionCase.objects.filter(workspace=self.workspace, lead=self.lead, title="New contract").exists())
+
+
+class BrokeragePaperworkTests(TestCase):
+    def setUp(self):
+        from .models import BrokerageSignatureTemplate, BrokerageContractPacket
+        User = get_user_model()
+        self.owner = User.objects.create_user("broker_owner", password="example")
+        self.agent = User.objects.create_user("broker_agent", password="example")
+        self.foreign = User.objects.create_user("broker_foreign", password="example")
+        self.workspace = Workspace.objects.create(name="Brokerage Workspace", kind="brokerage")
+        self.other = Workspace.objects.create(name="Other Brokerage", kind="brokerage")
+        Membership.objects.create(user=self.owner, workspace=self.workspace, role="owner")
+        Membership.objects.create(user=self.agent, workspace=self.workspace, role="agent")
+        Membership.objects.create(user=self.foreign, workspace=self.other, role="owner")
+        self.case = TransactionCase.objects.create(workspace=self.workspace, title="Main Street purchase")
+        self.other_case = TransactionCase.objects.create(workspace=self.other, title="Private transaction")
+        self.template = BrokerageSignatureTemplate.objects.create(
+            workspace=self.workspace, name="Approved purchase agreement",
+            provider_template_id="approved-template-id",
+            buyer_role="Buyer", seller_role="Seller", property_address_field="PropertyAddress",
+        )
+        self.other_template = BrokerageSignatureTemplate.objects.create(
+            workspace=self.other, name="Foreign Agreement",
+            provider_template_id="private-id", buyer_role="Buyer",
+        )
+        self.packet = BrokerageContractPacket.objects.create(
+            workspace=self.workspace, transaction=self.case, template=self.template,
+            buyer_name="Alex Buyer", buyer_email="alex@example.test",
+            seller_name="Sam Seller", seller_email="sam@example.test",
+            property_address="22 Main Street", created_by=self.owner,
+        )
+
+    def test_agent_can_prepare_packet_but_cannot_send_or_register_template(self):
+        self.client.force_login(self.agent)
+        self.assertEqual(self.client.get(reverse("brokerage_new_paperwork_template")).status_code, 403)
+        self.assertEqual(self.client.post(reverse("brokerage_send_contract_packet", args=[self.packet.pk]), {"confirmation":"send"}).status_code, 403)
+        self.assertEqual(self.client.get(reverse("brokerage_contract_packet", args=[self.packet.pk])).status_code, 200)
+
+    def test_other_workspace_cannot_access_packet_or_transaction(self):
+        self.client.force_login(self.foreign)
+        self.assertEqual(self.client.get(reverse("brokerage_contract_packet", args=[self.packet.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse("brokerage_new_contract_packet", args=[self.case.pk])).status_code, 404)
+
+    def test_cannot_select_foreign_workspace_template(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("brokerage_new_contract_packet", args=[self.case.pk]), {
+            "template": self.other_template.pk, "buyer_name": "Alex",
+            "buyer_email": "alex@example.test", "property_address": "22 Main Street",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("template", response.context["form"].errors)
+
+    def test_authorized_send_has_explicit_confirmation_and_one_provider_call(self):
+        from unittest.mock import patch
+        from .models import BrokerageContractPacket
+        self.client.force_login(self.owner)
+        self.assertEqual(self.client.get(reverse("brokerage_send_contract_packet", args=[self.packet.pk])).status_code, 200)
+        with patch("ai_workflows.views.send_request", return_value=("signature-123", True)) as mocked:
+            self.assertEqual(self.client.post(reverse("brokerage_send_contract_packet", args=[self.packet.pk]), {"confirmation":"wrong"}).status_code, 400)
+            self.assertEqual(self.client.post(reverse("brokerage_send_contract_packet", args=[self.packet.pk]), {"confirmation":"send"}).status_code, 302)
+            self.assertEqual(self.client.post(reverse("brokerage_send_contract_packet", args=[self.packet.pk]), {"confirmation":"send"}).status_code, 302)
+            self.assertEqual(mocked.call_count, 1)
+        self.packet.refresh_from_db()
+        self.assertEqual(self.packet.provider_request_id, "signature-123")
+        self.assertTrue(self.packet.sent_test_mode)
+        self.assertEqual(self.packet.status, "sent")
+        self.assertEqual(BrokerageContractPacket.objects.filter(pk=self.packet.pk).count(), 1)
+
+    def test_provider_failure_preserves_unsent_draft(self):
+        from unittest.mock import patch
+        from .esign import SignatureSendError
+        self.client.force_login(self.owner)
+        with patch("ai_workflows.views.send_request", side_effect=SignatureSendError("No provider")):
+            self.client.post(reverse("brokerage_send_contract_packet", args=[self.packet.pk]), {"confirmation":"send"})
+        self.packet.refresh_from_db()
+        self.assertEqual(self.packet.status, "draft")
+        self.assertEqual(self.packet.provider_request_id, "")
+
+    def test_provider_payload_uses_only_configured_custom_fields_and_recipient_roles(self):
+        from .esign import prepare_request
+        payload = prepare_request(self.packet)
+        self.assertEqual(payload["template_ids"], ["approved-template-id"])
+        self.assertEqual([s["role"] for s in payload["signers"]], ["Buyer", "Seller"])
+        self.assertEqual(payload["custom_fields"], [{"name": "PropertyAddress", "value": "22 Main Street"}])
+
+    def test_live_disabled_defaults_to_test_mode(self):
+        import io
+        import json
+        from unittest.mock import patch
+        from .esign import send_request
+        encoded = json.dumps({"signature_request":{"signature_request_id":"test-id"}}).encode()
+        with patch.dict("os.environ", {"DROPBOX_SIGN_API_KEY":"test-only", "CRM_ESIGN_LIVE_SEND_ENABLED":"false"}):
+            with patch("ai_workflows.esign.urlopen", return_value=io.BytesIO(encoded)) as request:
+                request_id, test_mode = send_request(self.packet)
+                sent = json.loads(request.call_args.args[0].data)
+        self.assertEqual(request_id, "test-id")
+        self.assertTrue(test_mode)
+        self.assertTrue(sent["test_mode"])
+
+    def test_no_sales_management_records_are_deleted(self):
+        from leads.models import Lead
+        from people.models import Person
+        from dashboard.access import get_allowed_lead_type_keys
+        old_person = Person.objects.create(workspace=self.workspace, first_name="Legacy", last_name="Owner", person_type="lead")
+        old = Lead.objects.create(workspace=self.workspace, person=old_person, lead_type="property_management")
+        self.assertNotIn(old.lead_type, get_allowed_lead_type_keys(self.owner))
+        self.assertTrue(Lead.objects.filter(pk=old.pk).exists())
