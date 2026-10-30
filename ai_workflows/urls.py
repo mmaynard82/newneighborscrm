@@ -3,6 +3,11 @@ from . import views
 
 urlpatterns = [
     path("", views.workbench, name="ai_workbench"),
+    path("field/appointments/new/", views.field_appointment_new, name="field_appointment_new"),
+    path("field/appointments/<int:appointment_id>/edit/", views.field_appointment_edit, name="field_appointment_edit"),
+    path("lead/<int:lead_id>/leadpilot/", views.leadpilot_start_lead, name="leadpilot_start_lead"),
+    path("transactions/<int:case_id>/leadpilot/", views.leadpilot_start_transaction, name="leadpilot_start_transaction"),
+    path("leadpilot/reviews/<int:review_id>/refresh/", views.leadpilot_refresh, name="leadpilot_refresh"),
     path("lead/<int:lead_id>/review/", views.review_lead, name="ai_review_lead"),
     path("paperwork/templates/", views.paperwork_templates, name="brokerage_paperwork_templates"),
     path("paperwork/templates/new/", views.new_paperwork_template, name="brokerage_new_paperwork_template"),
