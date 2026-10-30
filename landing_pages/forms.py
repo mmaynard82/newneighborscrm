@@ -15,6 +15,7 @@ class LandingPageForm(forms.ModelForm):
         ).order_by("username")
         self.fields["assigned_agent"].required = False
         self.fields["assigned_agent"].label = "Route new inquiries to"
+        self.fields["template"].choices = [choice for choice in self.fields["template"].choices if choice[0] != "property_management"]
 
     class Meta:
         model = LandingPage

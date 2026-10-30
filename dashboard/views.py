@@ -52,90 +52,31 @@ from .forms import (
 
 @login_required
 def home(request):
+    """Sales brokerage dashboard; keep legacy service records untouched."""
+    from ai_workflows.models import TransactionCase, BrokerageContractPacket
+
+    workspace = single_workspace_for(request.user)
     allowed_leads = filter_leads_for_user(Lead.objects.all(), request.user)
     today = timezone.localdate()
-
-    total_people = visible_records(Person.objects.all(), request.user).count()
-    total_properties = visible_records(Property.objects.all(), request.user).count()
-    new_leads = allowed_leads.filter(status="new").count()
-    active_services = Service.objects.filter(status="active").count()
-
-    tasks_due_today = visible_records(Task.objects.all(), request.user).filter(
-        due_date=today
-    ).exclude(
-        status="completed"
-    ).count()
-
-    overdue_tasks = visible_records(Task.objects.all(), request.user).filter(
-        due_date__lt=today
-    ).exclude(
-        status="completed"
-    ).count()
-
-    high_priority_tasks = visible_records(Task.objects.all(), request.user).filter(
-        priority__in=["high", "urgent"]
-    ).exclude(
-        status="completed"
-    ).count()
-
-    open_maintenance = MaintenanceRequest.objects.exclude(
-        status__in=["completed", "cancelled"]
-    ).count()
-
-    emergency_maintenance = MaintenanceRequest.objects.filter(
-        priority="emergency"
-    ).exclude(
-        status__in=["completed", "cancelled"]
-    ).count()
-
-    inspections_due = HomeInspection.objects.filter(
-        next_inspection_date__lte=today
-    ).count()
-
-    recent_leads = allowed_leads.select_related(
-        "person",
-        "related_property",
-    ).order_by("-created_at")[:8]
-
-    upcoming_tasks = visible_records(Task.objects.all(), request.user).select_related(
-        "related_person",
-        "related_property",
-    ).exclude(
-        status="completed"
-    ).order_by("due_date", "-created_at")[:8]
-
-    recent_maintenance = MaintenanceRequest.objects.select_related(
-        "property",
-        "assigned_vendor",
-    ).order_by("-date_reported")[:5]
-
-    upcoming_inspections = HomeInspection.objects.select_related(
-        "property",
-    ).order_by("next_inspection_date")[:5]
-
-    recent_documents = Document.objects.select_related(
-        "related_person",
-        "related_property",
-    ).order_by("-uploaded_at")[:5]
-
+    cases = TransactionCase.objects.filter(workspace=workspace)
+    packets = BrokerageContractPacket.objects.filter(workspace=workspace)
+    tasks = visible_records(Task.objects.all(), request.user).exclude(status="completed")
     context = {
-        "total_people": total_people,
-        "total_properties": total_properties,
-        "new_leads": new_leads,
-        "active_services": active_services,
-        "tasks_due_today": tasks_due_today,
-        "overdue_tasks": overdue_tasks,
-        "high_priority_tasks": high_priority_tasks,
-        "open_maintenance": open_maintenance,
-        "emergency_maintenance": emergency_maintenance,
-        "inspections_due": inspections_due,
-        "recent_leads": recent_leads,
-        "upcoming_tasks": upcoming_tasks,
-        "recent_maintenance": recent_maintenance,
-        "upcoming_inspections": upcoming_inspections,
-        "recent_documents": recent_documents,
+        "total_people": visible_records(Person.objects.all(), request.user).count(),
+        "total_properties": visible_records(Property.objects.all(), request.user).count(),
+        "new_leads": allowed_leads.filter(status="new").count(),
+        "active_transactions": cases.exclude(stage__in=["closed", "cancelled"]).count(),
+        "pending_contract_packets": packets.filter(status="draft").count(),
+        "closing_this_month": cases.filter(
+            closing_date__year=today.year, closing_date__month=today.month
+        ).exclude(stage__in=["closed", "cancelled"]).count(),
+        "tasks_due_today": tasks.filter(due_date=today).count(),
+        "overdue_tasks": tasks.filter(due_date__lt=today).count(),
+        "high_priority_tasks": tasks.filter(priority__in=["high", "urgent"]).count(),
+        "recent_leads": allowed_leads.select_related("person", "related_property").order_by("-created_at")[:8],
+        "upcoming_tasks": tasks.select_related("related_person", "related_property").order_by("due_date", "-created_at")[:8],
+        "recent_transactions": cases.select_related("lead__person").order_by("-created_at")[:6],
     }
-
     return render(request, "dashboard/home.html", context)
 
 
