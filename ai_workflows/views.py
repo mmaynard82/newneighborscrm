@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from accounts.access import single_workspace_for
 from leads.models import Lead
+from dashboard.access import REAL_ESTATE_ONLY_LEAD_TYPES
 from .engine import lead_review, transaction_review
 from .forms import TransactionCaseForm
 from .models import AgentRecommendation, TransactionCase
@@ -17,7 +18,7 @@ def workbench(request):
     return render(request, "ai_workflows/workbench.html", {
         "appointments": FieldAppointment.objects.filter(workspace=workspace, status="scheduled", starts_at__gte=timezone.now()).select_related("lead__person", "assigned_agent", "transaction").order_by("starts_at")[:12],
         "remote_reviews": LeadPilotReview.objects.filter(workspace=workspace).select_related("lead__person", "transaction").order_by("-created_at")[:12],
-        "leads": Lead.objects.filter(workspace=workspace).select_related("person").order_by("-created_at")[:40],
+        "leads": Lead.objects.filter(workspace=workspace, lead_type__in=REAL_ESTATE_ONLY_LEAD_TYPES).select_related("person").order_by("-created_at")[:40],
         "cases": TransactionCase.objects.filter(workspace=workspace).order_by("-created_at")[:50],
         "recommendations": AgentRecommendation.objects.filter(workspace=workspace).order_by("-created_at")[:30],
     })
@@ -261,7 +262,7 @@ def field_appointment_edit(request, appointment_id):
 @require_POST
 def leadpilot_start_lead(request, lead_id):
     workspace = single_workspace_for(request.user)
-    lead = get_object_or_404(Lead.objects.select_related("person"), pk=lead_id, workspace=workspace)
+    lead = get_object_or_404(Lead.objects.select_related("person"), pk=lead_id, workspace=workspace, lead_type__in=REAL_ESTATE_ONLY_LEAD_TYPES)
     review = LeadPilotReview.objects.create(
         workspace=workspace, lead=lead, requested_by=request.user,
         reference="crm-{}-lead-{}-{}".format(workspace.pk, lead.pk, get_random_string(12)),
