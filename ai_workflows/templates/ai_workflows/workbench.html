@@ -1,1 +1,69 @@
-{% extends "ai_workflows/base.html" %}{% block content %}<div class="topbar"><h1>Sales Brokerage Workbench</h1><p class="muted">Lead review and real estate transaction coordination. Recommendations are drafts for human review; no messages or transactions are executed automatically.</p><a class="btn" href="{% url 'ai_create_transaction' %}">+ New sales transaction</a> <a class="btn secondary" href="{% url 'brokerage_paperwork_templates' %}">Contract templates</a></div><div class="card"><h2>Lead agent</h2><p class="muted">Review CRM leads and prepare next-step recommendations.</p><div class="table-wrap"><table><thead><tr><th>Lead</th><th>Status</th><th>Action</th></tr></thead><tbody>{% for lead in leads %}<tr><td>{{ lead.person }}</td><td>{{ lead.get_status_display }}</td><td><form method="post" action="{% url 'ai_review_lead' lead.pk %}">{% csrf_token %}<button type="submit">Review lead</button></form></td></tr>{% empty %}<tr><td colspan="3">No leads in your workspace.</td></tr>{% endfor %}</tbody></table></div></div><div class="card"><h2>Sales transaction management</h2><div class="table-wrap"><table><thead><tr><th>Transaction</th><th>Stage</th><th>Next</th></tr></thead><tbody>{% for case in cases %}<tr><td><a href="{% url 'ai_transaction_detail' case.pk %}">{{ case.title }}</a></td><td>{{ case.get_stage_display }}</td><td><a href="{% url 'ai_transaction_detail' case.pk %}">Review deadlines</a></td></tr>{% empty %}<tr><td colspan="3">No transactions yet.</td></tr>{% endfor %}</tbody></table></div></div><div class="card"><h2>Agent recommendations</h2>{% for item in recommendations %}<div style="border-bottom:1px solid #ddd;padding:14px 0"><strong>{{ item.title }}</strong> <span class="pill">{{ item.get_status_display }}</span><p>{{ item.explanation }}</p>{% if item.status == "proposed" %}<div class="actions"><form method="post" action="{% url 'ai_update_recommendation' item.pk 'acknowledged' %}">{% csrf_token %}<button type="submit">Acknowledge</button></form><form method="post" action="{% url 'ai_update_recommendation' item.pk 'dismissed' %}">{% csrf_token %}<button type="submit">Dismiss</button></form></div>{% endif %}</div>{% empty %}<p class="muted">Review a lead or transaction to generate recommendations.</p>{% endfor %}</div>{% endblock %}
+{% extends "ai_workflows/base.html" %}
+{% block content %}
+<div class="topbar">
+  <h1>Agent Field Desk</h1>
+  <p class="muted">A sales agent's day: connect, show, offer, contract, close. LeadPilot prepares draft guidance—your team makes the decisions.</p>
+  {% if messages %}{% for message in messages %}<p role="status">{{ message }}</p>{% endfor %}{% endif %}
+  <div class="actions">
+    <a class="btn" href="{% url 'field_appointment_new' %}">+ Schedule showing / appointment</a>
+    <a class="btn secondary" href="{% url 'ai_create_transaction' %}">+ Open sales transaction</a>
+    <a class="btn secondary" href="{% url 'brokerage_paperwork_templates' %}">Contracts &amp; E-Sign</a>
+    <a class="btn secondary" href="/pipeline/">Sales Pipeline</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Upcoming appointments &amp; showings</h2>
+  <p class="muted">Schedule buyer consultations, listing presentations, tours, offers, inspections, walk-throughs and closings.</p>
+  <div class="table-wrap"><table><thead><tr><th>When</th><th>Appointment</th><th>Where</th><th>Client / deal</th><th>Agent</th><th></th></tr></thead><tbody>
+    {% for appointment in appointments %}
+    <tr><td>{{ appointment.starts_at|date:"M j, g:i A" }}</td><td><strong>{{ appointment.get_event_type_display }}</strong><p>{{ appointment.title }}</p></td><td>{{ appointment.location|default:"To be confirmed" }}</td><td>{% if appointment.lead %}{{ appointment.lead.person }}{% elif appointment.transaction %}{{ appointment.transaction.title }}{% else %}—{% endif %}</td><td>{{ appointment.assigned_agent.get_full_name|default:appointment.assigned_agent.username|default:"Unassigned" }}</td><td><a href="{% url 'field_appointment_edit' appointment.pk %}">Edit</a></td></tr>
+    {% empty %}<tr><td colspan="6">No upcoming appointments. Schedule your next showing or client call.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+
+<div class="card">
+  <h2>1. Connect with buyers &amp; sellers</h2>
+  <p class="muted">Review new leads and ask LeadPilot's Real Estate Lead Conversion Team to draft qualification questions, next steps and a personalized follow-up approach. Nothing is automatically sent.</p>
+  <div class="table-wrap"><table><thead><tr><th>Client</th><th>Stage</th><th>Actions</th></tr></thead><tbody>
+    {% for lead in leads %}
+    <tr><td><a href="{% url 'lead_detail' lead.pk %}">{{ lead.person }}</a><p class="muted">{{ lead.get_lead_type_display }}</p></td><td>{{ lead.get_status_display }}</td><td><div class="actions"><form method="post" action="{% url 'leadpilot_start_lead' lead.pk %}">{% csrf_token %}<button type="submit">Ask LeadPilot AI</button></form><form method="post" action="{% url 'ai_review_lead' lead.pk %}">{% csrf_token %}<button type="submit">CRM checklist</button></form></div></td></tr>
+    {% empty %}<tr><td colspan="3">No current sales leads.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+
+<div class="card">
+  <h2>2. Offers → under contract → closing</h2>
+  <p class="muted">Track inspection, financing, appraisal and closing milestones, then prepare approved forms for electronic signature.</p>
+  <div class="table-wrap"><table><thead><tr><th>Deal</th><th>Stage</th><th>Closing</th><th>Action</th></tr></thead><tbody>
+  {% for case in cases %}<tr><td><a href="{% url 'ai_transaction_detail' case.pk %}">{{ case.title }}</a></td><td>{{ case.get_stage_display }}</td><td>{{ case.closing_date|default:"Not confirmed" }}</td><td><a class="btn secondary" href="{% url 'ai_transaction_detail' case.pk %}">Manage transaction</a></td></tr>
+  {% empty %}<tr><td colspan="4">No active sales transactions yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+
+<div class="card">
+  <h2>LeadPilot AI reviews</h2>
+  <p class="muted">Each review runs the existing LeadPilot team in your mapped workspace. Results are drafts for the brokerage to inspect, not instructions to send documents or messages.</p>
+  {% for review in remote_reviews %}
+    <div style="padding:16px 0;border-bottom:1px solid #e5e7eb">
+      <strong>{% if review.lead %}Lead: {{ review.lead.person }}{% elif review.transaction %}Transaction: {{ review.transaction.title }}{% endif %}</strong>
+      <span class="pill">{{ review.status }}</span>
+      {% if review.error_message %}<p role="alert">{{ review.error_message }}</p>{% endif %}
+      <div class="actions"><form method="post" action="{% url 'leadpilot_refresh' review.pk %}">{% csrf_token %}<button type="submit">Refresh AI result</button></form></div>
+      {% if review.result_json %}<details><summary>Read AI recommendations (verify before acting)</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ review.result_json|pprint }}</pre></details>{% endif %}
+    </div>
+  {% empty %}<p class="muted">No LeadPilot reviews yet. Choose "Ask LeadPilot AI" beside a lead or inside a transaction.</p>{% endfor %}
+</div>
+
+<div class="card">
+  <h2>CRM checklist recommendations</h2>
+  {% for item in recommendations %}
+  <div style="padding:14px 0;border-bottom:1px solid #e5e7eb">
+    <strong>{{ item.title }}</strong> <span class="pill">{{ item.get_status_display }}</span>
+    {% if item.lead %}<span class="muted">— {{ item.lead.person }}</span>{% elif item.transaction %}<span class="muted">— {{ item.transaction.title }}</span>{% endif %}
+    <p>{{ item.explanation }}</p>
+    {% if item.status == "proposed" %}<div class="actions"><form method="post" action="{% url 'ai_update_recommendation' item.pk 'acknowledged' %}">{% csrf_token %}<button type="submit">Acknowledge</button></form><form method="post" action="{% url 'ai_update_recommendation' item.pk 'dismissed' %}">{% csrf_token %}<button type="submit">Dismiss</button></form></div>{% endif %}
+  </div>
+  {% empty %}<p class="muted">No pending CRM checklist suggestions.</p>{% endfor %}
+</div>
+{% endblock %}
