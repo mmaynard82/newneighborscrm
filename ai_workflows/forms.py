@@ -9,7 +9,7 @@ class TransactionCaseForm(forms.ModelForm):
         widgets = {key: forms.DateInput(attrs={"type": "date"}) for key in ("inspection_deadline", "financing_deadline", "closing_date")}
     def __init__(self, *args, workspace=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["lead"].queryset = Lead.objects.filter(workspace=workspace) if workspace else Lead.objects.none()
+        self.fields["lead"].queryset = Lead.objects.filter(workspace=workspace, lead_type__in=REAL_ESTATE_ONLY_LEAD_TYPES) if workspace else Lead.objects.none()
         self.fields["lead"].required = False
 
 
@@ -58,6 +58,7 @@ class BrokerageContractPacketForm(forms.ModelForm):
 from django.contrib.auth import get_user_model
 from accounts.models import Membership
 from .models import FieldAppointment
+from dashboard.access import REAL_ESTATE_ONLY_LEAD_TYPES
 
 
 class FieldAppointmentForm(forms.ModelForm):
