@@ -59,6 +59,7 @@ def transaction_detail(request, case_id):
     return render(request, "ai_workflows/detail.html", {
         "case": item,
         "recommendations": AgentRecommendation.objects.filter(workspace=workspace, transaction=item).order_by("-created_at"),
+        "packets": item.contract_packets.select_related("template").order_by("-created_at"),
     })
 
 @login_required
