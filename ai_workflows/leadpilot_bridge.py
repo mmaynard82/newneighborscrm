@@ -9,7 +9,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
-from django.core.exceptions import ImproperlyConfigured
 
 
 class LeadPilotBridgeError(Exception):
@@ -26,7 +25,7 @@ def _config(workspace_id):
         raise LeadPilotBridgeError("This CRM workspace is not connected to LeadPilot.")
     url = urlsplit(base)
     if url.scheme != "https" or not url.netloc or url.username or url.password or url.query or url.fragment:
-        raise ImproperlyConfigured("LeadPilot must be configured with a secure HTTPS URL.")
+        raise LeadPilotBridgeError("LeadPilot bridge must use a secure HTTPS origin. Check Render settings.")
     return base, token
 
 
