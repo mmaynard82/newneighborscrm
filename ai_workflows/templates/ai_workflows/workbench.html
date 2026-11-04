@@ -42,15 +42,22 @@
 </div>
 
 <div class="card">
-  <h2>LeadPilot AI reviews</h2>
-  <p class="muted">Each review runs the existing LeadPilot team in your mapped workspace. Results are drafts for the brokerage to inspect, not instructions to send documents or messages.</p>
+  <h2>LeadPilot AI lead briefings</h2>
+  <p class="muted">When proactive automation is enabled, new sales inquiries are queued for LeadPilot review. AI suggestions remain drafts, require agent verification, and are never sent to clients automatically.</p>
   {% for review in remote_reviews %}
     <div style="padding:16px 0;border-bottom:1px solid #e5e7eb">
       <strong>{% if review.lead %}Lead: {{ review.lead.person }}{% elif review.transaction %}Transaction: {{ review.transaction.title }}{% endif %}</strong>
       <span class="pill">{{ review.status }}</span>
       {% if review.error_message %}<p role="alert">{{ review.error_message }}</p>{% endif %}
       <div class="actions"><form method="post" action="{% url 'leadpilot_refresh' review.pk %}">{% csrf_token %}<button type="submit">Refresh AI result</button></form></div>
-      {% if review.result_json %}<details><summary>Read AI recommendations (verify before acting)</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ review.result_json|pprint }}</pre></details>{% endif %}
+      {% if review.result_json %}
+      <div style="margin:12px 0;padding:12px;background:#f8fafc;border-radius:8px">
+        {% if review.result_json.average_lead_score != None %}<strong>Lead readiness score:</strong> {{ review.result_json.average_lead_score }} <span class="muted">(AI estimate; verify)</span><p></p>{% endif %}
+        {% for action in review.result_json.recommended_actions %}
+          <div style="margin:10px 0"><strong>{{ action.title }}</strong><p>{{ action.description }}</p><small>Recommended action — agent approval required</small></div>
+        {% empty %}<p class="muted">No action recommendations returned.</p>{% endfor %}
+      </div>
+      <details><summary>View full LeadPilot analysis</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ review.result_json|pprint }}</pre></details>{% endif %}
     </div>
   {% empty %}<p class="muted">No LeadPilot reviews yet. Choose "Ask LeadPilot AI" beside a lead or inside a transaction.</p>{% endfor %}
 </div>

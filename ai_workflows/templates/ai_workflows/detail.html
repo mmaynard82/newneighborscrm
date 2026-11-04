@@ -5,6 +5,9 @@
 {% for review in remote_reviews %}<div style="padding:12px 0;border-bottom:1px solid #e5e7eb"><strong>Review {{ review.created_at|date:"M j, Y g:i A" }}</strong> <span class="pill">{{ review.status }}</span>
 {% if review.error_message %}<p role="alert">{{ review.error_message }}</p>{% endif %}
 <form method="post" action="{% url 'leadpilot_refresh' review.pk %}">{% csrf_token %}<button type="submit">Refresh status</button></form>
-{% if review.result_json %}<details><summary>Inspect LeadPilot recommendations</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ review.result_json|pprint }}</pre></details>{% endif %}
+{% if review.result_json %}<div style="padding:12px;background:#f8fafc;border-radius:8px"><strong>AI draft action plan</strong>
+{% for action in review.result_json.recommended_actions %}<div style="padding:8px 0"><strong>{{ action.title }}</strong><p>{{ action.description }}</p><small>Review required — no action executed by CRM</small></div>
+{% empty %}<p>No AI action recommendations returned.</p>{% endfor %}</div>
+<details><summary>Full LeadPilot review</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ review.result_json|pprint }}</pre></details>{% endif %}
 </div>{% empty %}<p class="muted">No LeadPilot review has been requested yet.</p>{% endfor %}
 </div><div class="card"><h2>Recommendations for approval</h2>{% for item in recommendations %}<div style="border-bottom:1px solid #ddd;padding:12px 0"><strong>{{ item.title }}</strong> <span class="pill">{{ item.get_status_display }}</span><p>{{ item.explanation }}</p>{% if item.status == "proposed" %}<form method="post" action="{% url 'ai_update_recommendation' item.pk 'acknowledged' %}">{% csrf_token %}<button type="submit">Acknowledge</button></form>{% endif %}</div>{% empty %}<p>Run a milestone review to see recommendations.</p>{% endfor %}</div>{% endblock %}

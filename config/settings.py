@@ -151,3 +151,10 @@ EMAIL_USE_SSL = os.environ.get("CRM_EMAIL_USE_SSL", "False").lower() == "true"
 EMAIL_TIMEOUT = 10
 DEFAULT_FROM_EMAIL = os.environ.get("CRM_EMAIL_FROM", "")
 CRM_AGENT_EMAIL_NOTIFICATIONS = os.environ.get("CRM_AGENT_EMAIL_NOTIFICATIONS", "False").lower() == "true"
+
+# All proactive AI calls are opt-in and bound to a single authorized CRM workspace.
+LEADPILOT_AUTOMATION_ENABLED = os.environ.get("LEADPILOT_AUTOMATION_ENABLED", "false").lower() == "true"
+LEADPILOT_CRM_WORKSPACE_ID = os.environ.get("LEADPILOT_CRM_WORKSPACE_ID", "")
+LEADPILOT_BRIDGE_URL = os.environ.get("LEADPILOT_BRIDGE_URL", "")
+LEADPILOT_BRIDGE_TOKEN = os.environ.get("LEADPILOT_BRIDGE_TOKEN", "")
+LEADPILOT_AUTOMATION_DAILY_CAP = max(0, min(50, int(os.environ.get("LEADPILOT_AUTOMATION_DAILY_CAP", "10"))))
