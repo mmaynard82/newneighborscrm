@@ -46,7 +46,8 @@ class Command(BaseCommand):
                             defaults={"explanation": explanation},
                         )
 
-        # Count previously submitted work updated today, including earlier backlog.\n        dispatched = LeadPilotReview.objects.filter(
+        # Count previously submitted work updated today, including earlier backlog.
+        dispatched = LeadPilotReview.objects.filter(
             workspace_id=workspace, updated_at__date=today,
         ).exclude(remote_run_id="").count()
         allowance = max(0, settings.LEADPILOT_AUTOMATION_DAILY_CAP - dispatched)
