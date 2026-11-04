@@ -257,3 +257,81 @@ class FieldAgentBridgeTests(TestCase):
         from .models import LeadPilotReview
         foreign = LeadPilotReview.objects.create(workspace=self.other, lead=self.foreign_lead, reference="foreign-review-123", remote_run_id="0d97b1b3-1425-4e50-8ccb-5e2d9b9c1f6e")
         self.assertEqual(self.client.post(reverse("leadpilot_refresh", args=[foreign.pk])).status_code, 404)
+
+
+class ProactiveLeadPilotAutomationTests(TestCase):
+    def setUp(self):
+        from django.test import override_settings
+        from .models import LeadPilotReview
+        self.user = get_user_model().objects.create_user("auto_owner", password="test")
+        self.workspace = Workspace.objects.create(name="Automation test", kind="brokerage")
+        Membership.objects.create(user=self.user, workspace=self.workspace, role="owner")
+        self.enabled = override_settings(
+            LEADPILOT_AUTOMATION_ENABLED=True,
+            LEADPILOT_CRM_WORKSPACE_ID=str(self.workspace.pk),
+            LEADPILOT_BRIDGE_URL="https://leadpilot.example.test",
+            LEADPILOT_BRIDGE_TOKEN="a" * 48,
+            LEADPILOT_AUTOMATION_DAILY_CAP=10,
+        )
+        self.enabled.enable()
+
+    def tearDown(self):
+        self.enabled.disable()
+
+    def test_new_sales_lead_is_queued_once_without_network_call(self):
+        from .models import LeadPilotReview
+        from .automation import queue_lead
+        from unittest.mock import patch
+        person = Person.objects.create(workspace=self.workspace, first_name="New", last_name="Buyer", email="new@example.test", person_type="lead")
+        with patch("ai_workflows.leadpilot_bridge.urlopen") as network:
+            lead = Lead.objects.create(workspace=self.workspace, person=person, lead_type="buyer")
+            queue_lead(lead)
+        self.assertEqual(LeadPilotReview.objects.filter(lead=lead, status="pending").count(), 1)
+        network.assert_not_called()
+
+    def test_service_leads_are_never_automatically_sent(self):
+        from .models import LeadPilotReview
+        person = Person.objects.create(workspace=self.workspace, first_name="Old", last_name="Service", email="old@example.test", person_type="lead")
+        lead = Lead.objects.create(workspace=self.workspace, person=person, lead_type="property_management")
+        self.assertFalse(LeadPilotReview.objects.filter(lead=lead).exists())
+
+    def test_transaction_with_near_deadline_gets_one_review_per_day(self):
+        from .models import LeadPilotReview
+        from .automation import queue_transaction
+        case = TransactionCase.objects.create(workspace=self.workspace, title="Closing soon", closing_date=timezone.localdate()+timedelta(days=2))
+        queue_transaction(case)
+        queue_transaction(case)
+        self.assertEqual(LeadPilotReview.objects.filter(transaction=case).count(), 1)
+
+    def test_closed_deal_never_enters_daily_ai_review(self):
+        from .models import LeadPilotReview
+        from .automation import queue_transaction
+        case = TransactionCase.objects.create(workspace=self.workspace, title="Closed sale", stage="closed", closing_date=timezone.localdate())
+        self.assertIsNone(queue_transaction(case))
+        self.assertFalse(LeadPilotReview.objects.filter(transaction=case).exists())
+
+    def test_worker_obeys_daily_cap_and_fetches_only_review_results(self):
+        from django.core.management import call_command
+        from django.test import override_settings
+        from unittest.mock import patch
+        from .models import LeadPilotReview
+        person = Person.objects.create(workspace=self.workspace, first_name="One", last_name="Client", email="one@example.test", person_type="lead")
+        lead = Lead.objects.create(workspace=self.workspace, person=person, lead_type="buyer")
+        with override_settings(LEADPILOT_AUTOMATION_DAILY_CAP=1):
+            with patch("ai_workflows.management.commands.process_leadpilot_automation.start_review", return_value={"run_id":"bb5e496b-3654-4d65-9c06-ce1172d6bc12","status":"queued"}) as start:
+                with patch("ai_workflows.management.commands.process_leadpilot_automation.check_review", return_value={"status":"awaiting_approval","result":{"summary":"Draft for approval"}}) as poll:
+                    call_command("process_leadpilot_automation")
+                    call_command("process_leadpilot_automation")
+        review = LeadPilotReview.objects.get(lead=lead)
+        self.assertEqual(review.status, "awaiting_approval")
+        self.assertEqual(review.result_json["summary"], "Draft for approval")
+        self.assertEqual(start.call_count, 1)
+        self.assertEqual(poll.call_count, 1)
+
+    def test_disabled_automation_creates_no_ai_reviews(self):
+        from django.test import override_settings
+        from .models import LeadPilotReview
+        with override_settings(LEADPILOT_AUTOMATION_ENABLED=False):
+            person = Person.objects.create(workspace=self.workspace, first_name="Disabled", last_name="Lead", person_type="lead")
+            lead = Lead.objects.create(workspace=self.workspace, person=person, lead_type="buyer")
+        self.assertFalse(LeadPilotReview.objects.filter(lead=lead).exists())
